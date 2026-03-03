@@ -10,3 +10,5 @@ load_dotenv(_project_root / ".env")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+# For verifying Supabase Auth JWTs: legacy HS256 secret, or use JWKS (ES256) when SUPABASE_URL is set
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")

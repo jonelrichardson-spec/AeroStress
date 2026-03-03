@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -76,8 +76,78 @@ class TurbineListItem(BaseModel):
     calendar_age_years: float
     true_age_years: Optional[float]
     terrain_class: Optional[str]
+    stress_multiplier: Optional[float] = None
     project_name: Optional[str]
     state: Optional[str]
 
     class Config:
         from_attributes = True
+        extra = "ignore"
+
+
+# --- Inspections (P0) ---
+class InspectionCreate(BaseModel):
+    conducted_at: Optional[datetime] = None  # default now()
+    inspector_name: Optional[str] = None
+    component_inspected: Optional[str] = None
+    condition_found: Optional[str] = None
+    severity_rating: Optional[int] = Field(None, ge=1, le=5)
+    notes: Optional[str] = None
+
+
+class InspectionUpdate(BaseModel):
+    status: Optional[Literal["draft", "submitted"]] = None
+    component_inspected: Optional[str] = None
+    condition_found: Optional[str] = None
+    severity_rating: Optional[int] = Field(None, ge=1, le=5)
+    notes: Optional[str] = None
+    prediction_match: Optional[Literal["confirmed", "partial", "not_found"]] = None  # P1
+    attachment_url: Optional[str] = None  # P1
+
+
+class Inspection(BaseModel):
+    id: UUID
+    turbine_id: UUID
+    conducted_at: datetime
+    inspector_name: Optional[str] = None
+    status: str
+    component_inspected: Optional[str] = None
+    condition_found: Optional[str] = None
+    severity_rating: Optional[int] = None
+    notes: Optional[str] = None
+    submitted_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    prediction_match: Optional[str] = None  # P1: confirmed | partial | not_found
+    attachment_url: Optional[str] = None  # P1
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+
+# --- CSV import response ---
+class CsvImportResult(BaseModel):
+    created: int
+    failed: int
+    errors: List[str] = []
+    turbines: List[TurbineListItem] = []
+
+
+# --- Profiles (P0: roles) ---
+class ProfileUpdate(BaseModel):
+    role: Optional[Literal["asset_manager", "technician"]] = None
+    fleet_id: Optional[UUID] = None
+
+
+class Profile(BaseModel):
+    id: UUID
+    user_id: UUID
+    role: str
+    fleet_id: Optional[UUID] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"

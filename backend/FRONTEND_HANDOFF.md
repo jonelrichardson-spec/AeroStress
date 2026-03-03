@@ -8,13 +8,13 @@
 | **Anon key** | Supabase Dashboard → Settings → API → `anon` `public` key. Safe for frontend. |
 | **RLS enabled?** | **Built.** RLS is enabled on `fleets`, `turbines`, `terrain_classifications`, `stress_calculations`. |
 | **RLS policies** | **Built.** Policy: `using (true) with check (true)` — allows all operations (for now). |
-| **Supabase Auth** | **Not yet.** No email/password or OAuth. |
+| **Supabase Auth** | **Built (P0).** Frontend uses Supabase Auth (email/password or OAuth). Backend verifies JWT with `SUPABASE_JWT_SECRET` (Dashboard → API → JWT Secret). |
 
 ---
 
 ## 2. Database Schema
 
-**Full schema:** See `backend/migrations/001_initial.sql` and `002_day1_schema.sql`
+**Full schema:** See `backend/migrations/001_initial.sql`, `002_day1_schema.sql`, `003_inspections.sql`, and `004_profiles.sql` (profiles: user_id, role, fleet_id).
 
 ### Tables
 - **`fleets`** — Fleet name, timestamps
@@ -48,11 +48,11 @@
 
 **profiles/users table:** **Not yet.** No extra tables beyond Auth (and Auth not set up).
 
-**inspections table:** **Not yet.** Mock for Sprint 1.
+**inspections table:** **Built.** Migration `003_inspections.sql`. Fields: turbine_id, conducted_at, inspector_name, status (draft | submitted), component_inspected, condition_found, severity_rating (1–5), notes, submitted_at.
 
 **terrain_class:** In `stress_calculations`, not on `turbines`. API joins and returns it in the response.
 
-**stress_multiplier:** Stored in `stress_calculations` per turbine. API does not return it yet (can add).
+**stress_multiplier:** Stored in `stress_calculations` per turbine. API returns it in turbine list and single-turbine responses.
 
 **true_age:** Stored in `stress_calculations.true_age_years`. API returns it.
 
@@ -87,8 +87,23 @@
 |------|----------|--------|
 | All turbines (lat/lng, terrain, stress) | `GET /turbines?limit=500&offset=0` | **Built** |
 | Turbines for a fleet | `GET /fleets/{fleet_id}/turbines?sort=stress` | **Built** |
-| Single turbine by ID | `GET /turbines/{id}` | **Not yet** |
-| Auth + role + farm | — | **Not yet** |
+| Single turbine by ID | `GET /turbines/{id}` | **Built** |
+| CSV import turbines | `POST /fleets/{fleet_id}/turbines/import-csv` (file upload) | **Built** |
+| Critical Action (top % at risk) | `GET /fleets/{fleet_id}/critical-action?top_percent=5` | **Built** |
+| Blind spots (high stress, no inspection) | `GET /fleets/{fleet_id}/blind-spots?high_stress_percent=20` | **Built** |
+| Failure-mode predictions | `GET /turbines/{id}/failure-predictions` | **Built** |
+| Create inspection | `POST /turbines/{id}/inspections` | **Built** |
+| List inspections for turbine | `GET /turbines/{id}/inspections` | **Built** |
+| Submit inspection | `PATCH /inspections/{id}` (body: `{"status": "submitted"}`) | **Built** |
+| Critical Action Report PDF | `GET /fleets/{id}/critical-action/report?top_percent=5` | **Built** (P0) |
+| Inspection Report PDF | `GET /inspections/{id}/report` | **Built** (P0) |
+| Auth (JWT) | Bearer token from Supabase Auth; backend verifies with `SUPABASE_JWT_SECRET` | **Built** (P0) |
+| Profile (role) | `GET /profile`, `PATCH /profile` (require Bearer); roles: asset_manager, technician | **Built** (P0) |
+| Stress explanation (plain language) | `GET /turbines/{id}/stress-explanation` | **Built** (P1) |
+| Inspection prediction match | `PATCH /inspections/{id}` body: `prediction_match`: `confirmed` \| `partial` \| `not_found` | **Built** (P1) |
+| Inspection attachment | `POST /inspections/{id}/attachment` (file upload); or set `attachment_url` via PATCH | **Built** (P1) — create bucket `inspection-attachments` in Supabase Storage |
+| Notification on submit | Set `INSPECTION_SUBMITTED_WEBHOOK_URL` in env; backend POSTs to it when inspection submitted | **Built** (P1) |
+| Projected savings / O&M | `GET /fleets/{id}/projected-savings?annual_om_per_turbine=50000` | **Built** (P1) |
 
 ### Sprint 2
 
@@ -96,8 +111,8 @@
 |------|--------|
 | True Age per turbine | **Built** — returned as `true_age_years` |
 | Heatmap data | Use `GET /turbines` — frontend can map lat/lng |
-| Inspection submission | **Not yet** |
-| Inspection history per turbine | **Not yet** |
+| Inspection submission | **Built** — POST inspection, PATCH to submit |
+| Inspection history per turbine | **Built** — GET /turbines/{id}/inspections |
 
 ---
 
@@ -161,10 +176,10 @@
 |---------|--------|
 | Supabase URL + anon key | You share from Dashboard |
 | RLS + permissive policies | Built |
-| Supabase Auth | Not yet |
-| Schema (fleets, turbines, terrain_classifications, stress_calculations) | Built |
-| profiles/users | Not yet |
-| inspections | Not yet |
+| Supabase Auth | Frontend uses Supabase Auth; backend verifies JWT with SUPABASE_JWT_SECRET (P0) |
+| Schema (fleets, turbines, terrain_classifications, stress_calculations, inspections) | Built — run `003_inspections.sql` for inspections |
+| profiles (role, fleet_id) | Built — run `004_profiles.sql`; GET/PATCH /profile with Bearer (P0) |
+| inspections table + APIs | Built |
 | 500 turbines seeded | Built |
 | Terrain classified (USGS + fallback) | Built |
 | USGS elevation for terrain | Built |
@@ -172,7 +187,11 @@
 | GET /turbines | Built |
 | GET /fleets/{id}/turbines | Built |
 | POST /fleets, POST /fleets/{id}/turbines | Built |
-| GET /turbines/{id} | Not yet |
+| GET /turbines/{id} | Built |
+| POST /fleets/{id}/turbines/import-csv | Built |
+| GET /fleets/{id}/critical-action | Built |
+| GET /fleets/{id}/blind-spots | Built |
+| GET /turbines/{id}/failure-predictions | Built |
+| Inspections (create, list, submit) | Built |
 | Auth + roles | Not yet |
 | Storage for photos | Not yet |
-| Inspection endpoints | Not yet |

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import fleets, turbines, turbines_global
+from app.api import fleets, inspections, profile, turbines, turbines_global
 
 app = FastAPI(
     title="AeroStress API",
@@ -20,6 +20,8 @@ app.add_middleware(
 app.include_router(fleets.router)
 app.include_router(turbines.router)
 app.include_router(turbines_global.router)
+app.include_router(inspections.router)
+app.include_router(profile.router)
 
 
 @app.get("/health")
