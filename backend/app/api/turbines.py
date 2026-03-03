@@ -14,8 +14,9 @@ router = APIRouter(prefix="/fleets/{fleet_id}/turbines", tags=["fleet-turbines"]
 def create_turbine(fleet_id: UUID, body: TurbineCreate):
     """Add a turbine to a fleet (user-created turbines, not USWTDB seed)."""
     supabase = get_supabase()
+    calendar_age = body.get_calendar_age_years()
     terrain_class, multiplier, true_age = compute_true_age(
-        body.calendar_age_years,
+        calendar_age,
         latitude=body.latitude,
         longitude=body.longitude,
     )
@@ -24,7 +25,7 @@ def create_turbine(fleet_id: UUID, body: TurbineCreate):
         "latitude": body.latitude,
         "longitude": body.longitude,
         "model": body.model,
-        "calendar_age_years": body.calendar_age_years,
+        "calendar_age_years": calendar_age,
     }
     result = supabase.table("turbines").insert(row).execute()
     if not result.data or len(result.data) == 0:
@@ -38,7 +39,7 @@ def create_turbine(fleet_id: UUID, body: TurbineCreate):
         "terrain_classification_id": tc_id,
         "terrain_class": terrain_class,
         "stress_multiplier": multiplier,
-        "calendar_age_years": body.calendar_age_years,
+        "calendar_age_years": calendar_age,
         "true_age_years": true_age,
     }).execute()
     turbine["true_age_years"] = true_age
