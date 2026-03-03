@@ -61,7 +61,38 @@ export function turbinesToGeoJSON(
   };
 }
 
-// ── Layer Paint Expressions ──
+// ── Triangle Marker (SDF) ──
+// Canvas-generated upward-pointing triangle. Added to the map as an SDF image
+// so Mapbox can recolor it per-feature via icon-color.
+
+export const TRIANGLE_IMAGE_ID = "triangle-marker";
+const TRIANGLE_SIZE = 32;
+
+export function createTriangleImage(): {
+  width: number;
+  height: number;
+  data: Uint8ClampedArray;
+} {
+  const size = TRIANGLE_SIZE;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  const pad = 2;
+  ctx.beginPath();
+  ctx.moveTo(size / 2, pad);
+  ctx.lineTo(size - pad, size - pad);
+  ctx.lineTo(pad, size - pad);
+  ctx.closePath();
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+
+  const { data } = ctx.getImageData(0, 0, size, size);
+  return { width: size, height: size, data };
+}
+
+// ── Layer Expressions ──
 
 export const TERRAIN_COLOR_EXPRESSION: mapboxgl.Expression = [
   "match",
@@ -77,17 +108,17 @@ export const TERRAIN_COLOR_EXPRESSION: mapboxgl.Expression = [
   "#ffffff",
 ];
 
-// Circle radius scales with stress multiplier: higher stress = larger dot
-export const STRESS_RADIUS_EXPRESSION: mapboxgl.Expression = [
+// icon-size is a multiplier against the base 32px triangle image
+export const STRESS_SIZE_EXPRESSION: mapboxgl.Expression = [
   "interpolate",
   ["linear"],
   ["get", "stress_multiplier"],
   1.0,
-  5,
+  0.5,
   1.3,
-  7,
+  0.65,
   1.5,
-  9,
+  0.75,
   1.85,
-  12,
+  0.9,
 ];

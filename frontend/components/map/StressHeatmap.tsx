@@ -15,12 +15,14 @@ import { MAP_DEFAULTS, TERRAIN_CONFIG } from "@/lib/constants";
 import {
   turbinesToGeoJSON,
   TERRAIN_COLOR_EXPRESSION,
-  STRESS_RADIUS_EXPRESSION,
+  STRESS_SIZE_EXPRESSION,
+  TRIANGLE_IMAGE_ID,
+  createTriangleImage,
 } from "@/lib/mapbox";
 import type { Turbine, TerrainClass } from "@/lib/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
-const TURBINE_LAYER_ID = "turbine-circles";
+const TURBINE_LAYER_ID = "turbine-markers";
 
 export default function StressHeatmap() {
   const mapRef = useRef<MapRef>(null);
@@ -59,6 +61,10 @@ export default function StressHeatmap() {
   }, [setSelectedTurbine]);
 
   const handleMapLoad = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (map && !map.hasImage(TRIANGLE_IMAGE_ID)) {
+      map.addImage(TRIANGLE_IMAGE_ID, createTriangleImage(), { sdf: true });
+    }
     setMapLoaded(true);
   }, []);
 
@@ -109,16 +115,19 @@ export default function StressHeatmap() {
           }}
         />
 
-        {/* Main turbine markers */}
+        {/* Triangle turbine markers */}
         <Layer
           id={TURBINE_LAYER_ID}
-          type="circle"
+          type="symbol"
+          layout={{
+            "icon-image": TRIANGLE_IMAGE_ID,
+            "icon-size": STRESS_SIZE_EXPRESSION,
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true,
+          }}
           paint={{
-            "circle-radius": STRESS_RADIUS_EXPRESSION,
-            "circle-color": TERRAIN_COLOR_EXPRESSION,
-            "circle-opacity": 0.85,
-            "circle-stroke-width": 1,
-            "circle-stroke-color": "#1c1917",
+            "icon-color": TERRAIN_COLOR_EXPRESSION,
+            "icon-opacity": 0.85,
           }}
         />
       </Source>

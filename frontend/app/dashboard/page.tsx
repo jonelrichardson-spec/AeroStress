@@ -109,12 +109,12 @@ export default function DashboardPage() {
               >
                 <CardContent className="p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <Icon className={`h-4 w-4 ${stat.color}`} />
-                    <span className="text-xs font-body text-brand-muted">
+                    <Icon className={`h-5 w-5 ${stat.color}`} />
+                    <span className="text-sm font-body text-brand-muted">
                       {stat.label}
                     </span>
                   </div>
-                  <p className="font-mono font-semibold text-2xl text-brand-text">
+                  <p className="font-mono font-semibold text-5xl text-brand-text">
                     {stat.value}
                   </p>
                 </CardContent>
