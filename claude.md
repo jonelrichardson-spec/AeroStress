@@ -22,7 +22,7 @@ AeroStress is a predictive maintenance platform that calculates the "True Age" o
 
 ## Tech Stack (Frontend)
 
-- **Framework:** Next.js 14 (App Router)
+- **Framework:** Next.js 16 (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS + custom design tokens
 - **Maps:** Mapbox GL JS
@@ -273,40 +273,40 @@ Terrain accents (locked — do not change):
 --scada:     #7b72e9
 ```
 
-### Tailwind Config Extension
-```javascript
-// tailwind.config.ts — extend with AeroStress tokens
-module.exports = {
-  theme: {
-    extend: {
-      fontFamily: {
-        display: ['Syne', 'sans-serif'],
-        mono: ['IBM Plex Mono', 'monospace'],
-        body: ['Lora', 'serif'],
-      },
-      colors: {
-        terrain: {
-          flat: '#52b788',
-          moderate: '#f4a261',
-          complex: '#e85d3a',
-          coastal: '#48cae4',
-        },
-        scada: '#7b72e9',
-        brand: {
-          bg: '#1c1917',
-          surface: '#272220',
-          surface2: '#302a27',
-          border: '#44393a',
-          text: '#ffffff',
-          muted: '#b0b8c4',
-          amber: '#f4a261',
-          accent: '#e85d3a',
-        },
-      },
-    },
-  },
-};
+### Tailwind v4 Theme (CSS-based — no tailwind.config.ts)
+
+Tailwind v4 uses CSS-based configuration via `@theme` in `app/globals.css` instead of a `tailwind.config.ts` file. All AeroStress design tokens are defined there:
+
+```css
+/* app/globals.css — inside @theme inline { ... } */
+
+/* ── AeroStress Brand Colors ── */
+--color-brand-bg: #1c1917;
+--color-brand-surface: #272220;
+--color-brand-surface2: #302a27;
+--color-brand-border: #44393a;
+--color-brand-text: #ffffff;
+--color-brand-muted: #b0b8c4;
+--color-brand-amber: #f4a261;
+--color-brand-accent: #e85d3a;
+
+/* ── Terrain Colors ── */
+--color-terrain-flat: #52b788;
+--color-terrain-moderate: #f4a261;
+--color-terrain-complex: #e85d3a;
+--color-terrain-coastal: #48cae4;
+
+/* ── SCADA baseline ── */
+--color-scada: #7b72e9;
+
+/* ── Font Families ── */
+--font-display: "Syne", sans-serif;
+--font-mono: "IBM Plex Mono", monospace;
+--font-body: "Lora", serif;
+--font-sans: var(--font-body);
 ```
+
+Usage in components: `bg-brand-bg`, `text-brand-muted`, `border-brand-border`, `text-terrain-flat`, `font-display`, `font-mono`, `font-body`, etc.
 
 ---
 
