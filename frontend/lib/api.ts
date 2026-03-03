@@ -45,3 +45,16 @@ export async function getFleetTurbines(
     `/fleets/${fleetId}/turbines?sort=${sort}`
   );
 }
+
+export async function getTurbineById(
+  turbineId: string
+): Promise<Turbine | null> {
+  try {
+    return await fetchApi<Turbine>(`/turbines/${turbineId}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}

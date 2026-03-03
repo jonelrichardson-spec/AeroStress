@@ -11,6 +11,7 @@ export interface Turbine {
   year_operational: number;
   calendar_age_years: number;
   true_age_years: number;
+  stress_multiplier: number;
   terrain_class: TerrainClass;
   project_name: string;
   state: string;
