@@ -40,9 +40,11 @@ def main():
     import httpx
 
     base = os.getenv("API_BASE_URL", "http://localhost:8000")
+    # Turbine import can be slow (USGS terrain lookup per turbine)
+    timeout = httpx.Timeout(60.0)
 
     # Create fleet
-    r = httpx.post(f"{base}/fleets", json={"name": "Test Import Fleet"})
+    r = httpx.post(f"{base}/fleets", json={"name": "Test Import Fleet"}, timeout=timeout)
     if r.status_code != 200:
         print(f"Create fleet failed: {r.status_code} {r.text}")
         sys.exit(1)
@@ -56,7 +58,7 @@ def main():
             "longitude": lon,
             "year_operational": 2010 + (i % 5),  # 2010-2014
         }
-        r = httpx.post(f"{base}/fleets/{fleet_id}/turbines", json=payload)
+        r = httpx.post(f"{base}/fleets/{fleet_id}/turbines", json=payload, timeout=timeout)
         if r.status_code != 200:
             print(f"  Skip {desc}: {r.status_code} {r.text[:200]}")
             continue

@@ -64,8 +64,8 @@
 |----------|--------|
 | **How many turbines** | **Built.** 500 (subset). |
 | **USWTDB version** | Live API; current is ~V8.2. |
-| **Terrain classified?** | **Built.** Placeholder heuristic (latitude-based), not USGS. |
-| **USGS elevation integrated?** | **Not yet.** Planned later. |
+| **Terrain classified?** | **Built.** USGS Elevation API at turbine lat/lon; fallback latitude heuristic if USGS fails. |
+| **USGS elevation integrated?** | **Built.** Used for terrain class (flat/moderate/complex/coastal). |
 
 ---
 
@@ -166,8 +166,8 @@
 | profiles/users | Not yet |
 | inspections | Not yet |
 | 500 turbines seeded | Built |
-| Terrain classified (placeholder) | Built |
-| USGS integration | Not yet |
+| Terrain classified (USGS + fallback) | Built |
+| USGS elevation for terrain | Built |
 | FastAPI backend | Built |
 | GET /turbines | Built |
 | GET /fleets/{id}/turbines | Built |

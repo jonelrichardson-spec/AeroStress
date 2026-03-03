@@ -14,10 +14,11 @@ class Fleet(BaseModel):
     id: UUID
     name: str
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None  # optional if DB omits it
 
     class Config:
         from_attributes = True
+        extra = "ignore"  # allow operator_name etc. from DB
 
 
 # --- Turbines ---
