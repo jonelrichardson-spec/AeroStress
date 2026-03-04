@@ -1,7 +1,9 @@
+import csv
+import io
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 
 from app.db import get_supabase
@@ -224,3 +226,76 @@ def get_blind_spots(
     out = [t for t in turbines if t["id"] in high_stress_ids and t["id"] not in inspected_ids]
     out.sort(key=lambda x: x.get("true_age_years") or 0, reverse=True)
     return out
+
+
+@router.get("/{fleet_id}/weather-events")
+def get_fleet_weather_events(fleet_id: UUID):
+    """P2: Stub — historical weather/storm events for fleet region (last decade). Returns sample data."""
+    supabase = get_supabase()
+    f = supabase.table("fleets").select("id").eq("id", str(fleet_id)).execute()
+    if not f.data or len(f.data) == 0:
+        raise HTTPException(status_code=404, detail="Fleet not found")
+    return {
+        "fleet_id": str(fleet_id),
+        "events": [
+            {"date": "2022-03-15", "event_type": "high_wind", "description": "Sustained 25 m/s; ridge exposure"},
+            {"date": "2021-08-20", "event_type": "storm", "description": "Lightning strike; grid outage"},
+        ],
+        "note": "Stub data. Integrate with weather API for production.",
+    }
+
+
+@router.post("/{fleet_id}/import-maintenance-history")
+def import_maintenance_history(fleet_id: UUID, file: UploadFile = File(...)):
+    """P2: Import existing maintenance history from CSV. Columns: case_id (or turbine_id), date, notes."""
+    supabase = get_supabase()
+    f = supabase.table("fleets").select("id").eq("id", str(fleet_id)).execute()
+    if not f.data or len(f.data) == 0:
+        raise HTTPException(status_code=404, detail="Fleet not found")
+    content = file.file.read()
+    try:
+        text = content.decode("utf-8")
+    except Exception:
+        raise HTTPException(status_code=400, detail="File must be UTF-8 text")
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV has no headers")
+    # Prefer case_id; allow turbine_id
+    case_col = "case_id" if "case_id" in reader.fieldnames else ("turbine_id" if "turbine_id" in reader.fieldnames else None)
+    date_col = "date" if "date" in reader.fieldnames else "reported_at"
+    notes_col = "notes" if "notes" in reader.fieldnames else "notes"
+    if not case_col or notes_col not in reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV must have case_id (or turbine_id), date, notes")
+    # Resolve turbine ids for this fleet (case_id -> turbine_id)
+    turbines_res = (
+        supabase.table("turbines")
+        .select("id, case_id")
+        .eq("fleet_id", str(fleet_id))
+        .execute()
+    )
+    case_to_id = {str(t.get("case_id")): t["id"] for t in (turbines_res.data or []) if t.get("case_id") is not None}
+    id_to_id = {str(t["id"]): t["id"] for t in (turbines_res.data or [])}
+    inserted = 0
+    errors = []
+    for i, row in enumerate(reader):
+        tid = None
+        if case_col == "case_id":
+            tid = case_to_id.get(str(row.get("case_id", "")).strip())
+        else:
+            tid = id_to_id.get(str(row.get("turbine_id", "")).strip())
+        if not tid:
+            errors.append(f"Row {i + 2}: turbine not found in fleet")
+            continue
+        reported = (row.get(date_col) or "").strip() or None
+        notes = (row.get(notes_col) or "").strip() or ""
+        if not notes:
+            continue
+        insert_row = {"turbine_id": str(tid), "notes": notes, "source": "import"}
+        if reported:
+            insert_row["reported_at"] = reported
+        try:
+            supabase.table("repair_notes").insert(insert_row).execute()
+            inserted += 1
+        except Exception as e:
+            errors.append(f"Row {i + 2}: {str(e)}")
+    return {"imported": inserted, "errors": errors[:20]}

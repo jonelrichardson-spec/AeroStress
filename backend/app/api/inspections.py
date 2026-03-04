@@ -7,6 +7,7 @@ POST /inspections/{id}/attachment - upload photo/file; stores in Supabase Storag
 
 import os
 from datetime import datetime, timezone
+from typing import List
 from uuid import UUID
 
 import httpx
@@ -15,7 +16,14 @@ from fastapi.responses import Response
 
 from app.config import SUPABASE_URL
 from app.db import get_supabase
-from app.models.schemas import Inspection, InspectionUpdate
+from app.models.schemas import (
+    Inspection,
+    InspectionUpdate,
+    RepairCompletion,
+    RepairCompletionCreate,
+    RepairRecommendation,
+    RepairRecommendationUpdate,
+)
 from app.services.pdf_reports import build_inspection_report_pdf
 
 router = APIRouter(prefix="/inspections", tags=["inspections"])
@@ -76,7 +84,14 @@ def get_inspection_report_pdf(inspection_id: UUID):
     if s_res.data and len(s_res.data) > 0:
         turbine["true_age_years"] = s_res.data[0].get("true_age_years")
         turbine["terrain_class"] = s_res.data[0].get("terrain_class")
-    pdf_buf = build_inspection_report_pdf(inspection, turbine)
+    rec_res = (
+        supabase.table("inspection_repair_recommendations")
+        .select("recommended_action, estimated_cost_low, estimated_cost_high")
+        .eq("inspection_id", str(inspection_id))
+        .execute()
+    )
+    repair_rec = dict(rec_res.data[0]) if rec_res.data and len(rec_res.data) > 0 else None
+    pdf_buf = build_inspection_report_pdf(inspection, turbine, repair_rec)
     return Response(
         content=pdf_buf.read(),
         media_type="application/pdf",
@@ -187,6 +202,88 @@ def _notify_inspection_submitted(inspection_id: UUID, inspection: dict) -> None:
         )
     except Exception:
         pass  # Don't fail the request if webhook fails
+
+
+@router.get("/{inspection_id}/repair-recommendation", response_model=RepairRecommendation | None)
+def get_repair_recommendation(inspection_id: UUID):
+    """P2: Get repair recommendation for this inspection (if set)."""
+    supabase = get_supabase()
+    r = (
+        supabase.table("inspection_repair_recommendations")
+        .select("*")
+        .eq("inspection_id", str(inspection_id))
+        .execute()
+    )
+    if not r.data or len(r.data) == 0:
+        return None
+    return r.data[0]
+
+
+@router.put("/{inspection_id}/repair-recommendation", response_model=RepairRecommendation)
+def set_repair_recommendation(inspection_id: UUID, body: RepairRecommendationUpdate):
+    """P2: Set or update repair recommendation and cost for this inspection."""
+    supabase = get_supabase()
+    insp = supabase.table("inspections").select("id").eq("id", str(inspection_id)).execute()
+    if not insp.data or len(insp.data) == 0:
+        raise HTTPException(status_code=404, detail="Inspection not found")
+    row = {
+        "inspection_id": str(inspection_id),
+        "recommended_action": body.recommended_action,
+        "estimated_cost_low": body.estimated_cost_low,
+        "estimated_cost_high": body.estimated_cost_high,
+    }
+    row = {k: v for k, v in row.items() if v is not None}
+    existing = (
+        supabase.table("inspection_repair_recommendations")
+        .select("id")
+        .eq("inspection_id", str(inspection_id))
+        .execute()
+    )
+    if existing.data and len(existing.data) > 0:
+        result = (
+            supabase.table("inspection_repair_recommendations")
+            .update(row)
+            .eq("inspection_id", str(inspection_id))
+            .execute()
+        )
+    else:
+        result = supabase.table("inspection_repair_recommendations").insert(row).execute()
+    if not result.data or len(result.data) == 0:
+        raise HTTPException(status_code=500, detail="Failed to save repair recommendation")
+    return result.data[0]
+
+
+@router.get("/{inspection_id}/repair-completions", response_model=List[RepairCompletion])
+def list_repair_completions(inspection_id: UUID):
+    """P2: List repair completions for this inspection (track when recommended repair was done)."""
+    supabase = get_supabase()
+    insp = supabase.table("inspections").select("id").eq("id", str(inspection_id)).execute()
+    if not insp.data or len(insp.data) == 0:
+        raise HTTPException(status_code=404, detail="Inspection not found")
+    result = (
+        supabase.table("repair_completions")
+        .select("*")
+        .eq("inspection_id", str(inspection_id))
+        .order("completed_at", desc=True)
+        .execute()
+    )
+    return result.data or []
+
+
+@router.post("/{inspection_id}/repair-completions", response_model=RepairCompletion)
+def create_repair_completion(inspection_id: UUID, body: RepairCompletionCreate):
+    """P2: Log that the recommended repair for this inspection was completed."""
+    supabase = get_supabase()
+    insp = supabase.table("inspections").select("id").eq("id", str(inspection_id)).execute()
+    if not insp.data or len(insp.data) == 0:
+        raise HTTPException(status_code=404, detail="Inspection not found")
+    row = {"inspection_id": str(inspection_id), "notes": body.notes}
+    if body.completed_at is not None:
+        row["completed_at"] = body.completed_at.isoformat().replace("+00:00", "Z")
+    result = supabase.table("repair_completions").insert(row).execute()
+    if not result.data or len(result.data) == 0:
+        raise HTTPException(status_code=500, detail="Failed to create repair completion")
+    return result.data[0]
 
 
 @router.post("/{inspection_id}/attachment", response_model=Inspection)
