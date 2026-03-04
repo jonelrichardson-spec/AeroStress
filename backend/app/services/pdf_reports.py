@@ -3,7 +3,7 @@ PDF report generation (P0): Critical Action Report and Inspection Report.
 """
 
 import io
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -86,7 +86,7 @@ _SEVERITY_RECOMMENDATION = {
 def build_inspection_report_pdf(
     inspection: Dict[str, Any],
     turbine: Dict[str, Any],
-    repair_recommendation: Dict[str, Any] | None = None,
+    repair_recommendation: Optional[Dict[str, Any]] = None,
 ) -> io.BytesIO:
     """Generate Inspection Report PDF for a single completed inspection. P2: includes repair recommendation + cost."""
     buf = io.BytesIO()
