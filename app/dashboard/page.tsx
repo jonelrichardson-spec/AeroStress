@@ -134,7 +134,7 @@ export default function DashboardPage() {
         {/* Terrain Legend */}
         <Card className="bg-brand-surface border-brand-border">
           <CardHeader className="pb-3">
-            <CardTitle className="font-display font-extrabold text-base text-brand-text">
+            <CardTitle className="font-display font-extrabold text-base text-brand-text text-center">
               Terrain Classification
             </CardTitle>
           </CardHeader>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
         {/* Filter + Turbine List */}
         <Card className="bg-brand-surface border-brand-border flex-1 flex flex-col min-h-0">
           <CardHeader className="pb-3">
-            <CardTitle className="font-display font-extrabold text-base text-brand-text">
+            <CardTitle className="font-display font-extrabold text-base text-brand-text text-center">
               Turbine List
             </CardTitle>
             <div className="mt-2">

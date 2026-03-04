@@ -429,6 +429,15 @@ className="bg-brand-surface border-brand-border flex-1 flex flex-col min-h-0"
   <TurbineListPanel />
 </CardContent>
 // ⚠️ CRITICAL: Only turbine list scrolls, not entire page
+
+// Card Titles (Terrain Classification, Turbine List)
+<CardTitle className="font-display font-extrabold text-base text-brand-text text-center">
+  Terrain Classification
+</CardTitle>
+<CardTitle className="font-display font-extrabold text-base text-brand-text text-center">
+  Turbine List
+</CardTitle>
+// ⚠️ CRITICAL: text-center for horizontal centering
 ```
 
 ### StressHeatmap (`components/map/StressHeatmap.tsx`)
