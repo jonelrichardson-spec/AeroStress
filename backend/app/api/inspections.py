@@ -131,7 +131,41 @@ def update_inspection(inspection_id: UUID, body: InspectionUpdate):
     # P1: Notify asset manager when report is submitted (optional webhook)
     if updates.get("status") == "submitted":
         _notify_inspection_submitted(inspection_id, row)
+    # P2: Flag for model review when finding deviates from prediction
+    if updates.get("status") == "submitted" and row.get("prediction_match") in ("partial", "not_found"):
+        _flag_model_review(supabase, inspection_id, row)
     return row
+
+
+def _flag_model_review(supabase, inspection_id: UUID, inspection: dict) -> None:
+    """P2: Create a model_review_flag when submitted finding deviates from prediction."""
+    turbine_id = inspection.get("turbine_id")
+    if not turbine_id:
+        return
+    try:
+        t = (
+            supabase.table("turbines")
+            .select("model")
+            .eq("id", str(turbine_id))
+            .execute()
+        )
+        s = (
+            supabase.table("stress_calculations")
+            .select("terrain_class")
+            .eq("turbine_id", str(turbine_id))
+            .execute()
+        )
+        model = t.data[0].get("model") if t.data else None
+        terrain_class = s.data[0].get("terrain_class") if s.data else None
+        supabase.table("model_review_flags").insert({
+            "inspection_id": str(inspection_id),
+            "turbine_id": str(turbine_id),
+            "terrain_class": terrain_class,
+            "turbine_model": model,
+            "prediction_match": inspection.get("prediction_match"),
+        }).execute()
+    except Exception:
+        pass  # Don't fail the request if flag insert fails
 
 
 def _notify_inspection_submitted(inspection_id: UUID, inspection: dict) -> None:

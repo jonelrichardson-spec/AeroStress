@@ -151,3 +151,24 @@ class Profile(BaseModel):
     class Config:
         from_attributes = True
         extra = "ignore"
+
+
+# --- Model review flags (P2) ---
+class ModelReviewFlag(BaseModel):
+    id: UUID
+    inspection_id: UUID
+    turbine_id: UUID
+    terrain_class: Optional[str] = None
+    turbine_model: Optional[str] = None
+    prediction_match: str  # partial | not_found
+    created_at: datetime
+    resolved_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+
+class ModelReviewFlagResolve(BaseModel):
+    notes: Optional[str] = None
