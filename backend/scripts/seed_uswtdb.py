@@ -25,9 +25,16 @@ from supabase import create_client
 
 USWTDB_API = "https://energy.usgs.gov/api/uswtdb/v1/turbines"
 TARGET_COUNT = 500
+FAST_COUNT = 50  # When --fast: no USGS calls, seed this many only
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Seed turbines from USWTDB")
+    parser.add_argument("--fast", action="store_true", help="Skip USGS elevation API; seed 50 turbines in seconds")
+    args = parser.parse_args()
+    fast = args.fast
+    target = FAST_COUNT if fast else TARGET_COUNT
     url = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
     key = (
         os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -41,10 +48,10 @@ def main():
     supabase = create_client(url, key)
 
     # Early exit if already seeded
-    check = supabase.table("turbines").select("id").limit(TARGET_COUNT).execute()
+    check = supabase.table("turbines").select("id").limit(target).execute()
     existing = len(check.data or [])
-    if existing >= TARGET_COUNT:
-        print(f"Already seeded: {existing}+ turbines in database. Nothing to do.")
+    if existing >= target:
+        print(f"Already seeded: {existing}+ turbines. Nothing to do.")
         return
 
     # Fetch from USWTDB API (turbines 10+ years old: p_year <= 2015)
@@ -75,11 +82,11 @@ def main():
         age = 2025 - t["p_year"]
         if age >= 10:
             candidates.append(t)
-            if len(candidates) >= TARGET_COUNT:
+            if len(candidates) >= target:
                 break
 
-    turbines = candidates[:TARGET_COUNT]
-    print(f"Processing {len(turbines)} turbines (10+ years old)...")
+    turbines = candidates[:target]
+    print(f"Processing {len(turbines)} turbines (10+ years old)" + (" [fast mode: no USGS]" if fast else "..."))
 
     inserted = 0
     skipped = 0
@@ -88,7 +95,7 @@ def main():
         ylat = t["ylat"]
         p_year = t["p_year"]
         calendar_age = 2025 - p_year
-        terrain_class = classify_terrain(ylat, xlong)
+        terrain_class = classify_terrain(ylat, xlong, use_usgs=not fast)
         mult = TERRAIN_MULTIPLIERS[terrain_class]
         true_age = round(calendar_age * mult, 2)
 

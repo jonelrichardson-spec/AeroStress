@@ -7,7 +7,7 @@ from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
 from app.db import get_supabase
 from app.models.schemas import CsvImportResult, TurbineCreate, TurbineListItem
-from app.services.stress import compute_true_age
+from app.services.stress import apply_stress_overrides, compute_true_age
 
 router = APIRouter(prefix="/fleets/{fleet_id}/turbines", tags=["fleet-turbines"])
 
@@ -78,6 +78,7 @@ def list_fleet_turbines(
             t["true_age_years"] = s.get("true_age_years")
             t["terrain_class"] = s.get("terrain_class")
             t["stress_multiplier"] = s.get("stress_multiplier")
+        apply_stress_overrides(supabase, turbines)
     if sort == "stress":
         turbines.sort(key=lambda x: x.get("true_age_years") or 0, reverse=True)
     elif sort == "calendar":

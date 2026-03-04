@@ -80,6 +80,13 @@ export default function StressHeatmap() {
     setMapLoaded(true);
   }, []);
 
+  const handleStyleData = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (map && !map.hasImage(TRIANGLE_IMAGE_ID)) {
+      map.addImage(TRIANGLE_IMAGE_ID, createTriangleImage(), { sdf: true });
+    }
+  }, []);
+
   if (!MAPBOX_TOKEN) {
     return (
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-brand-surface">
@@ -120,6 +127,7 @@ export default function StressHeatmap() {
         interactiveLayerIds={[TURBINE_LAYER_ID]}
         onClick={handleMapClick}
         onLoad={handleMapLoad}
+        onStyleData={handleStyleData}
         cursor="pointer"
         style={{ width: "100%", height: "100%" }}
       >

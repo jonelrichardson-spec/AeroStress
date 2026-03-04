@@ -3,7 +3,7 @@ PDF report generation (P0): Critical Action Report and Inspection Report.
 """
 
 import io
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -73,11 +73,22 @@ def build_critical_action_pdf(turbines: List[Dict[str, Any]], fleet_name: str) -
     return buf
 
 
+# P2: Default repair recommendation and cost range by severity (1-5)
+_SEVERITY_RECOMMENDATION = {
+    1: ("Monitor; no immediate action", 0, 1000),
+    2: ("Schedule follow-up inspection", 1000, 5000),
+    3: ("Plan repair within 6 months", 5000, 12000),
+    4: ("Prioritize repair within 3 months", 12000, 25000),
+    5: ("Urgent repair; consider shutdown if critical", 20000, 50000),
+}
+
+
 def build_inspection_report_pdf(
     inspection: Dict[str, Any],
     turbine: Dict[str, Any],
+    repair_recommendation: Optional[Dict[str, Any]] = None,
 ) -> io.BytesIO:
-    """Generate Inspection Report PDF for a single completed inspection."""
+    """Generate Inspection Report PDF for a single completed inspection. P2: includes repair recommendation + cost."""
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, rightMargin=0.75 * inch, leftMargin=0.75 * inch)
     styles = getSampleStyleSheet()
@@ -99,9 +110,22 @@ def build_inspection_report_pdf(
         Paragraph(f"<b>Condition:</b> {_safe(inspection.get('condition_found'))}", styles["Normal"]),
         Paragraph(f"<b>Severity (1–5):</b> {_safe(inspection.get('severity_rating'))}", styles["Normal"]),
         Paragraph(f"<b>Notes:</b> {_safe(inspection.get('notes'))}", styles["Normal"]),
-        Spacer(1, 0.2 * inch),
-        Paragraph(f"Report generated for asset managers and compliance. Status: {_safe(inspection.get('status'))}.", styles["Normal"]),
     ]
+    # P2: Repair recommendation and estimated cost
+    severity = inspection.get("severity_rating")
+    if repair_recommendation:
+        rec_action = repair_recommendation.get("recommended_action")
+        low, high = repair_recommendation.get("estimated_cost_low"), repair_recommendation.get("estimated_cost_high")
+    elif severity is not None and 1 <= severity <= 5:
+        rec_action, low, high = _SEVERITY_RECOMMENDATION.get(int(severity), ("Review recommended", 0, 0))
+    else:
+        rec_action, low, high = "Review recommended", 0, 0
+    story.append(Spacer(1, 0.2 * inch))
+    story.append(Paragraph("Repair recommendation (P2)", styles["Heading2"]))
+    story.append(Paragraph(f"<b>Recommended action:</b> {_safe(rec_action)}", styles["Normal"]))
+    story.append(Paragraph(f"<b>Estimated cost:</b> ${low:,}–${high:,}", styles["Normal"]))
+    story.append(Spacer(1, 0.2 * inch))
+    story.append(Paragraph(f"Report generated for asset managers and compliance. Status: {_safe(inspection.get('status'))}.", styles["Normal"]))
     doc.build(story)
     buf.seek(0)
     return buf

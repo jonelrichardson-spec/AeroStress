@@ -151,3 +151,110 @@ class Profile(BaseModel):
     class Config:
         from_attributes = True
         extra = "ignore"
+
+
+# --- Model review flags (P2) ---
+class ModelReviewFlag(BaseModel):
+    id: UUID
+    inspection_id: UUID
+    turbine_id: UUID
+    terrain_class: Optional[str] = None
+    turbine_model: Optional[str] = None
+    prediction_match: str  # partial | not_found
+    created_at: datetime
+    resolved_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+
+class ModelReviewFlagResolve(BaseModel):
+    notes: Optional[str] = None
+
+
+# --- P2: Repair notes (unstructured) ---
+class RepairNoteCreate(BaseModel):
+    notes: str
+    reported_at: Optional[datetime] = None
+
+
+class RepairNote(BaseModel):
+    id: UUID
+    turbine_id: UUID
+    notes: str
+    reported_at: datetime
+    source: str  # unstructured | import
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+
+# --- P2: Inspection repair recommendation ---
+class RepairRecommendationUpdate(BaseModel):
+    recommended_action: Optional[str] = None
+    estimated_cost_low: Optional[int] = None
+    estimated_cost_high: Optional[int] = None
+
+
+class RepairRecommendation(BaseModel):
+    id: UUID
+    inspection_id: UUID
+    recommended_action: Optional[str] = None
+    estimated_cost_low: Optional[int] = None
+    estimated_cost_high: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+
+# --- P2: Repair completion ---
+class RepairCompletionCreate(BaseModel):
+    completed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class RepairCompletion(BaseModel):
+    id: UUID
+    inspection_id: UUID
+    completed_at: datetime
+    notes: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+
+# --- P2: Stress multiplier override (recalibration) ---
+class StressMultiplierOverride(BaseModel):
+    terrain_class: str
+    turbine_model: str
+    multiplier: float
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+
+class StressMultiplierOverrideUpdate(BaseModel):
+    multiplier: float
+
+
+class StressMultiplierOverrideSet(BaseModel):
+    terrain_class: str
+    turbine_model: str = ""
+    multiplier: float
+
+
+# --- P2: Weather event (stub) ---
+class WeatherEventStub(BaseModel):
+    date: str
+    event_type: str
+    description: str

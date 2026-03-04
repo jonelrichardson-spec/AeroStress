@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "DASHBOARD", icon: Map },
   { href: "/dashboard/turbines", label: "TURBINES", icon: Wind },
   { href: "/inspections", label: "INSPECTIONS", icon: Eye },
-  { href: "/dashboard/reports", label: "REPORTS", icon: FileText },
+  { href: "/reports", label: "REPORTS", icon: FileText },
 ] as const;
 
 export default function Sidebar() {
@@ -22,9 +22,9 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-brand-surface border-r border-brand-border">
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-40 bg-brand-surface border-r border-brand-border">
       {/* Brand */}
-      <div className="flex items-center px-5 h-16 border-b border-brand-border">
+      <div className="flex items-center justify-center px-4 h-16 border-b border-brand-border overflow-hidden">
         <Logo size="md" />
       </div>
 
@@ -54,7 +54,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-brand-border">
-        <p className="text-xs font-mono text-brand-muted">v0.2.0 — Sprint 2</p>
+        <p className="text-xs font-mono text-brand-muted">v0.1.0 — Sprint 1</p>
       </div>
     </aside>
   );
