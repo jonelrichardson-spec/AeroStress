@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { MapPin, Wind, AlertTriangle, Activity, Loader2 } from "lucide-react";
+import { MapPin, Wind, Siren, Hourglass, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TERRAIN_CONFIG, STRESS_THRESHOLDS } from "@/lib/constants";
@@ -71,14 +71,14 @@ export default function DashboardPage() {
     {
       label: "High Stress",
       value: stats.total > 0 ? stats.highStress.toLocaleString() : "—",
-      icon: AlertTriangle,
+      icon: Siren,
       color: "text-terrain-complex",
     },
     {
       label: "Avg True Age",
       value:
         stats.avgTrueAge > 0 ? `${stats.avgTrueAge.toFixed(1)} yr` : "—",
-      icon: Activity,
+      icon: Hourglass,
       color: "text-scada",
     },
     {
