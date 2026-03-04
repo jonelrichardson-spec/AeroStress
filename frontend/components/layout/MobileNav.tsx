@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Map, Wind, Eye, FileText } from "lucide-react";
+import { Menu, Map, Wind, ClipboardList, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,10 +16,10 @@ import { cn } from "@/lib/utils";
 import Logo from "./Logo";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "DASHBOARD", icon: Map },
-  { href: "/dashboard/turbines", label: "TURBINES", icon: Wind },
-  { href: "/inspections", label: "INSPECTIONS", icon: Eye },
-  { href: "/dashboard/reports", label: "REPORTS", icon: FileText },
+  { href: "/dashboard", label: "Dashboard", icon: Map },
+  { href: "/dashboard/turbines", label: "Turbines", icon: Wind },
+  { href: "/inspections", label: "Inspections", icon: ClipboardList },
+  { href: "/reports", label: "Reports", icon: FileText },
 ] as const;
 
 export default function MobileNav() {

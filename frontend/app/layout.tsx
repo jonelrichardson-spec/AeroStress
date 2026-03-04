@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,8 +16,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <TooltipProvider>{children}</TooltipProvider>
+      <body className="min-h-screen bg-background text-foreground">
+        <ErrorBoundary>
+          <TooltipProvider>{children}</TooltipProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

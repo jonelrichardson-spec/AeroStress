@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Map, Wind, Eye, FileText } from "lucide-react";
+import { Map, Wind, ClipboardList, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "./Logo";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "DASHBOARD", icon: Map },
-  { href: "/dashboard/turbines", label: "TURBINES", icon: Wind },
-  { href: "/inspections", label: "INSPECTIONS", icon: Eye },
-  { href: "/dashboard/reports", label: "REPORTS", icon: FileText },
+  { href: "/dashboard", label: "Dashboard", icon: Map },
+  { href: "/dashboard/turbines", label: "Turbines", icon: Wind },
+  { href: "/inspections", label: "Inspections", icon: ClipboardList },
+  { href: "/reports", label: "Reports", icon: FileText },
 ] as const;
 
 export default function Sidebar() {
@@ -54,7 +54,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-brand-border">
-        <p className="text-xs font-mono text-brand-muted">v0.2.0 — Sprint 2</p>
+        <p className="text-xs font-mono text-brand-muted">v0.1.0 — Sprint 1</p>
       </div>
     </aside>
   );

@@ -13,7 +13,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query
 
 from app.db import get_supabase
-from app.models.schemas import Inspection, InspectionCreate, TurbineListItem
+from app.models.schemas import Inspection, InspectionCreate, RepairNote, RepairNoteCreate, TurbineListItem
 from app.services.failure_predictions import get_failure_predictions
 from app.services.stress_explanation import get_stress_explanation
 
@@ -155,6 +155,57 @@ def list_failure_predictions(turbine_id: UUID):
         cal_age,
     )
     return {"turbine_id": str(turbine_id), "predictions": predictions}
+
+
+@router.get("/{turbine_id}/repair-notes", response_model=List[RepairNote])
+def list_repair_notes(turbine_id: UUID):
+    """P2: List unstructured repair notes for this turbine (e.g. tech noticed corrosion during routine visit)."""
+    supabase = get_supabase()
+    t = supabase.table("turbines").select("id").eq("id", str(turbine_id)).execute()
+    if not t.data or len(t.data) == 0:
+        raise HTTPException(status_code=404, detail="Turbine not found")
+    result = (
+        supabase.table("repair_notes")
+        .select("*")
+        .eq("turbine_id", str(turbine_id))
+        .order("reported_at", desc=True)
+        .execute()
+    )
+    return result.data or []
+
+
+@router.post("/{turbine_id}/repair-notes", response_model=RepairNote)
+def create_repair_note(turbine_id: UUID, body: RepairNoteCreate):
+    """P2: Add unstructured repair note (maintenance not initiated by AeroStress)."""
+    supabase = get_supabase()
+    t = supabase.table("turbines").select("id").eq("id", str(turbine_id)).execute()
+    if not t.data or len(t.data) == 0:
+        raise HTTPException(status_code=404, detail="Turbine not found")
+    row = {"turbine_id": str(turbine_id), "notes": body.notes, "source": "unstructured"}
+    if body.reported_at is not None:
+        row["reported_at"] = body.reported_at.isoformat().replace("+00:00", "Z")
+    result = supabase.table("repair_notes").insert(row).execute()
+    if not result.data or len(result.data) == 0:
+        raise HTTPException(status_code=500, detail="Failed to create repair note")
+    return result.data[0]
+
+
+@router.get("/{turbine_id}/weather-events")
+def get_turbine_weather_events(turbine_id: UUID):
+    """P2: Stub — historical weather/storm events affecting this turbine (last decade). Returns sample data."""
+    supabase = get_supabase()
+    t = supabase.table("turbines").select("id").eq("id", str(turbine_id)).execute()
+    if not t.data or len(t.data) == 0:
+        raise HTTPException(status_code=404, detail="Turbine not found")
+    # Stub: no real weather API yet
+    return {
+        "turbine_id": str(turbine_id),
+        "events": [
+            {"date": "2022-03-15", "event_type": "high_wind", "description": "Sustained 25 m/s; ridge exposure"},
+            {"date": "2021-08-20", "event_type": "storm", "description": "Lightning strike nearby; grid outage"},
+        ],
+        "note": "Stub data. Integrate with weather API for production.",
+    }
 
 
 @router.get("/{turbine_id}/inspections", response_model=List[Inspection])

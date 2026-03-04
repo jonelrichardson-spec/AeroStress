@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { MapPin, Wind, Siren, Hourglass, Loader2 } from "lucide-react";
+import { MapPin, Wind, AlertTriangle, Activity, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TERRAIN_CONFIG, STRESS_THRESHOLDS } from "@/lib/constants";
@@ -27,6 +27,7 @@ const StressHeatmap = dynamic(
 
 export default function DashboardPage() {
   const turbines = useFarmStore((s) => s.turbines);
+  const error = useFarmStore((s) => s.error);
   const fetchTurbines = useFarmStore((s) => s.fetchTurbines);
   const setSelectedTurbine = useFarmStore((s) => s.setSelectedTurbine);
 
@@ -71,14 +72,14 @@ export default function DashboardPage() {
     {
       label: "High Stress",
       value: stats.total > 0 ? stats.highStress.toLocaleString() : "—",
-      icon: Siren,
+      icon: AlertTriangle,
       color: "text-terrain-complex",
     },
     {
-      label: "Average True\u00A0Age",
+      label: "Avg True Age",
       value:
         stats.avgTrueAge > 0 ? `${stats.avgTrueAge.toFixed(1)} yr` : "—",
-      icon: Hourglass,
+      icon: Activity,
       color: "text-scada",
     },
     {
@@ -90,14 +91,21 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] pt-2 px-4 pb-4 gap-4">
-      {/* Map Area */}
-      <div className="flex-1 relative bg-brand-surface rounded-lg overflow-hidden">
-        <StressHeatmap />
-      </div>
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
+      {error && (
+        <div className="mx-4 mt-4 p-3 rounded-lg bg-brand-surface border border-terrain-complex text-brand-text font-mono text-sm">
+          {error} — Is the backend running at{" "}
+          <code className="text-brand-amber">http://localhost:8000</code>?
+        </div>
+      )}
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+        {/* Map Area */}
+        <div className="flex-1 relative bg-brand-surface rounded-lg m-4 mr-0 lg:mr-4 overflow-hidden min-h-[300px]">
+          <StressHeatmap />
+        </div>
 
-      {/* Right Panel */}
-      <aside className="w-full lg:w-[30rem] h-full flex flex-col gap-4 overflow-y-auto min-h-0">
+        {/* Right Panel */}
+      <aside className="w-full lg:w-96 flex flex-col gap-4 p-4 overflow-y-auto">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 gap-3">
           {STAT_CARDS.map((stat) => {
@@ -110,11 +118,11 @@ export default function DashboardPage() {
                 <CardContent className="p-4 text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Icon className={`h-5 w-5 ${stat.color}`} />
-                    <span className="text-base font-body text-brand-muted">
+                    <span className="text-sm font-body text-brand-muted">
                       {stat.label}
                     </span>
                   </div>
-                  <p className="font-mono font-semibold text-6xl text-brand-text">
+                  <p className="font-mono font-semibold text-5xl text-brand-text">
                     {stat.value}
                   </p>
                 </CardContent>
@@ -125,12 +133,12 @@ export default function DashboardPage() {
 
         {/* Terrain Legend */}
         <Card className="bg-brand-surface border-brand-border">
-          <CardHeader className="pb-2 text-center">
+          <CardHeader className="pb-3">
             <CardTitle className="font-display font-extrabold text-base text-brand-text">
               Terrain Classification
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 p-0 px-6 pb-4">
+          <CardContent className="space-y-2">
             {(
               Object.entries(TERRAIN_CONFIG) as [
                 TerrainClass,
@@ -161,7 +169,7 @@ export default function DashboardPage() {
 
         {/* Filter + Turbine List */}
         <Card className="bg-brand-surface border-brand-border flex-1 flex flex-col min-h-0">
-          <CardHeader className="pb-3 text-center">
+          <CardHeader className="pb-3">
             <CardTitle className="font-display font-extrabold text-base text-brand-text">
               Turbine List
             </CardTitle>
@@ -174,6 +182,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </aside>
+      </div>
     </div>
   );
 }
