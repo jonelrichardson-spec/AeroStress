@@ -69,6 +69,3 @@ export const KW_TO_MW_DIVISOR = 1000;
 
 // ── Pagination ──
 export const DEFAULT_PAGE_SIZE = 500;
-
-// ── Units ──
-export const KW_TO_MW_DIVISOR = 1000;

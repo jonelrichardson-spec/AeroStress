@@ -85,25 +85,43 @@ Four tables exist: `fleets`, `turbines`, `terrain_classifications`, `stress_calc
 
 ### API Endpoints
 
+**P1 — NOW AVAILABLE (Pape's latest push):**
+
+**Auth (Supabase JWT, Bearer token from `supabase.auth.getSession()`):**
+| Endpoint | Auth | Body/Params | Returns |
+|----------|------|-------------|---------|
+| `GET /profile` | ✅ Bearer | — | `{ id, user_id, role, fleet_id, created_at, updated_at }` |
+| `PATCH /profile` | ✅ Bearer | `{ role?, fleet_id? }` | Same as GET /profile |
+
+**Turbine Detail:**
+| Endpoint | Auth | Returns |
+|----------|------|---------|
+| `GET /turbines/{id}` | ❌ | Single turbine (same shape as list + `stress_multiplier`) |
+| `GET /turbines/{id}/stress-explanation` | ❌ | `{ explanation: string }` |
+| `GET /turbines/{id}/failure-predictions` | ❌ | `{ predictions: [{ component, condition }] }` |
+| `GET /turbines/{id}/inspections` | ❌ | `Inspection[]` |
+
+**Inspections CRUD:**
+| Endpoint | Auth | Body/Params | Returns |
+|----------|------|-------------|---------|
+| `POST /turbines/{id}/inspections` | ❌ | `{ conducted_at?, inspector_name?, component_inspected?, condition_found?, severity_rating?, notes? }` | `Inspection` |
+| `GET /inspections/{id}` | ❌ | — | `Inspection` |
+| `PATCH /inspections/{id}` | ❌ | `{ status?, component_inspected?, condition_found?, severity_rating?, notes?, prediction_match?, attachment_url? }` | `Inspection` |
+| `POST /inspections/{id}/attachment` | ❌ | `multipart/form-data` file upload | `Inspection` with `attachment_url` |
+| `GET /inspections/{id}/report` | ❌ | — | PDF file |
+
+**Fleet:**
+| Endpoint | Auth | Params | Returns |
+|----------|------|--------|---------|
+| `GET /fleets/{id}/projected-savings` | ❌ | `?annual_om_per_turbine=50000` | `{ fleet_id, annual_om_per_turbine, total_turbines, high_risk_turbines_top_20pct, recommended_reallocation_percent, message }` |
+
+**Auth Note:** Only `GET /profile` and `PATCH /profile` require the Bearer token from Supabase Auth. All other endpoints are currently unauthenticated.
+
 **Sprint 1 — BUILT:**
 | Endpoint | Returns |
 |----------|---------|
 | `GET /turbines?limit=500&offset=0` | All turbines with terrain + stress data |
 | `GET /fleets/{fleet_id}/turbines?sort=stress` | Turbines for a specific fleet |
-
-**Sprint 1 — NOT YET:**
-| Endpoint | Status |
-|----------|--------|
-| `GET /turbines/{id}` | Not built — ask Pape |
-| Auth endpoints | Not built |
-
-**Sprint 2 — AVAILABLE:**
-- `true_age_years` already returned in GET /turbines response
-- Heatmap data = use GET /turbines and map lat/lng client-side
-
-**Sprint 2 — NOT YET:**
-- Inspection submission endpoint
-- Inspection history endpoint
 
 ### API Response Shape ✅ CONFIRMED
 ```json
@@ -133,14 +151,20 @@ Four tables exist: `fleets`, `turbines`, `terrain_classifications`, `stress_calc
 - Terrain classification: placeholder heuristic (latitude-based, not USGS yet)
 - USGS elevation integration: not yet — planned for later
 
-### NOT YET BUILT (Do not build screens that depend on these — ask Jo)
-- Supabase Auth (no login/signup yet)
-- Profiles/users table
-- Inspections table
-- Storage buckets for photos
-- Role assignment (asset_manager vs technician)
-- GET /turbines/{id} endpoint
-- Production deployment URL
+### STILL PENDING (Not yet available from Pape)
+- ❌ Supabase Auth full setup (login/signup UI, session management)
+- ❌ Storage buckets for photos (attachment upload works via API, but direct storage access not configured)
+- ❌ Supabase realtime subscriptions (for offline sync)
+- ❌ Production deployment URL (still TBD)
+
+### NOW AVAILABLE FROM PAPE (P1 Push)
+- ✅ `GET /turbines/{id}` — single turbine detail
+- ✅ Inspections table and CRUD endpoints
+- ✅ Profiles table and `GET /profile`, `PATCH /profile`
+- ✅ Stress explanation and failure predictions endpoints
+- ✅ Fleet projected savings endpoint
+- ✅ Inspection attachment upload via multipart form-data
+- ✅ PDF report generation for inspections via `GET /inspections/{id}/report`
 
 ---
 
@@ -178,27 +202,32 @@ interface Fleet {
   turbines?: Turbine[];
 }
 
-// NOT YET — draft for when Pape builds inspections
+// ✅ BUILT — Inspection interface from Pape's P1 push
 interface Inspection {
   id: string;
   turbine_id: string;
-  technician_id: string;
-  prediction: string;
-  finding: string;
-  match_status: 'confirmed' | 'partial' | 'not_found';
-  severity: number;
-  notes: string;
-  photos: string[];
-  completed_at: string;
-  synced: boolean;
+  conducted_at: string | null;
+  inspector_name: string | null;
+  status: 'pending' | 'completed' | 'cancelled';
+  component_inspected: string | null;
+  condition_found: string | null;
+  severity_rating: number | null;
+  notes: string | null;
+  submitted_at: string | null;
+  prediction_match: boolean | null;
+  attachment_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-// NOT YET — draft for when Pape builds auth
+// ✅ BUILT — UserProfile interface from Pape's P1 push
 interface UserProfile {
   id: string;
-  full_name: string;
+  user_id: string;  // Supabase auth.users.id
   role: 'asset_manager' | 'technician';
-  fleet_id: string;
+  fleet_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
@@ -310,6 +339,134 @@ Usage in components: `bg-brand-bg`, `text-brand-muted`, `border-brand-border`, `
 
 ---
 
+## UI Layout Specifications ✅ CRITICAL
+
+**These specifications were finalized after Sprint 1 merge. DO NOT modify without explicit approval.**
+
+### Sidebar (`components/layout/Sidebar.tsx`)
+```typescript
+// Container
+className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-40 bg-brand-surface border-r border-brand-border"
+
+// ⚠️ CRITICAL: z-40 ensures sidebar renders above TopBar (z-30)
+
+// Logo Header
+className="flex items-center justify-center px-4 h-16 border-b border-brand-border overflow-hidden"
+<Logo size="md" /> // NOT sm or lg — md fits perfectly within 256px width
+
+// Navigation Items
+NAV_ITEMS = [
+  { href: "/dashboard", label: "DASHBOARD", icon: Map },
+  { href: "/dashboard/turbines", label: "TURBINES", icon: Wind },
+  { href: "/inspections", label: "INSPECTIONS", icon: Eye },  // NOT /dashboard/inspections
+  { href: "/reports", label: "REPORTS", icon: FileText },      // NOT /dashboard/reports
+]
+
+// ⚠️ CRITICAL: Labels MUST be uppercase
+// ⚠️ CRITICAL: Inspections/Reports routes are top-level (/inspections, /reports)
+// ⚠️ CRITICAL: Icons: Eye for Inspections, FileText for Reports
+```
+
+### TopBar (`components/layout/TopBar.tsx`)
+```typescript
+// Container
+className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 md:px-6 bg-brand-bg/80 backdrop-blur-sm border-b border-brand-border"
+
+// Page Titles (MUST match Sidebar labels)
+PAGE_TITLES = {
+  "/dashboard": "DASHBOARD",
+  "/dashboard/turbines": "TURBINES",
+  "/inspections": "INSPECTIONS",
+  "/reports": "REPORTS",
+}
+
+// ⚠️ CRITICAL: All titles MUST be uppercase
+// ⚠️ CRITICAL: Routes match Sidebar (top-level for Inspections/Reports)
+
+// Icon Sizes
+<Bell className="h-6 w-6" />
+<User className="h-6 w-6" />
+// ⚠️ NOT h-5 w-5 — use h-6 w-6 for prominence
+```
+
+### MobileNav (`components/layout/MobileNav.tsx`)
+```typescript
+// Uses same NAV_ITEMS as Sidebar
+// ⚠️ CRITICAL: Keep in sync with Sidebar routes and labels
+```
+
+### Dashboard Layout (`app/dashboard/layout.tsx`)
+```typescript
+// Content area offset for sidebar
+<div className="md:pl-64 flex flex-col min-h-screen">
+  <TopBar />
+  <main className="flex-1">{children}</main>
+</div>
+
+// ⚠️ CRITICAL: md:pl-64 (256px) matches sidebar width (md:w-64)
+```
+
+### Dashboard Page (`app/dashboard/page.tsx`)
+```typescript
+// Main container
+className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] pt-2 px-4 pb-4 gap-4 overflow-hidden"
+// ⚠️ CRITICAL: overflow-hidden prevents page scrolling
+
+// Stat Cards
+<span className="text-2xl">{stat.value}</span>  // NOT text-6xl
+{stat.unit && (
+  <span className="text-base ml-1 text-brand-muted">{stat.unit}</span>
+)}
+// ⚠️ CRITICAL: Separate number (text-2xl) and unit (text-base) to prevent overflow
+
+// Right Panel
+className="w-full lg:w-[30rem] h-full flex flex-col gap-4 min-h-0"
+// ⚠️ CRITICAL: min-h-0 allows flex children to scroll
+
+// Turbine List Card
+className="bg-brand-surface border-brand-border flex-1 flex flex-col min-h-0"
+<CardContent className="flex-1 overflow-y-auto">
+  <TurbineListPanel />
+</CardContent>
+// ⚠️ CRITICAL: Only turbine list scrolls, not entire page
+
+// Card Titles (Terrain Classification, Turbine List)
+<CardTitle className="font-display font-extrabold text-base text-brand-text text-center">
+  Terrain Classification
+</CardTitle>
+<CardTitle className="font-display font-extrabold text-base text-brand-text text-center">
+  Turbine List
+</CardTitle>
+// ⚠️ CRITICAL: text-center for horizontal centering
+```
+
+### StressHeatmap (`components/map/StressHeatmap.tsx`)
+```typescript
+// Map must re-register triangle image on style changes
+const handleStyleData = useCallback(() => {
+  const map = mapRef.current?.getMap();
+  if (map && !map.hasImage(TRIANGLE_IMAGE_ID)) {
+    map.addImage(TRIANGLE_IMAGE_ID, createTriangleImage(), { sdf: true });
+  }
+}, []);
+
+<MapGL
+  onLoad={handleMapLoad}
+  onStyleData={handleStyleData}  // ⚠️ CRITICAL for dark mode
+/>
+
+// ⚠️ CRITICAL: onStyleData re-registers triangle image when light/dark mode toggles
+// Without this, triangles disappear in dark mode
+```
+
+### Constants (`lib/constants.ts`)
+```typescript
+// ⚠️ NO DUPLICATES: Each constant defined exactly once
+export const KW_TO_MW_DIVISOR = 1000;  // Line 68 ONLY
+```
+
+---
+
 ## File Structure
 
 ```
@@ -374,24 +531,30 @@ aerostress-dashboard/
 ### Sprint 1 — COMPLETE
 Dashboard layout, Mapbox map with SDF triangle markers, terrain filters, turbine list, stat cards, error states. Two commits merged. Login/Signup blocked on Supabase Auth (not built by Pape yet).
 
-### Sprint 2 Scope (CURRENT)
-| Screen | Description | Depends On |
-|--------|-------------|------------|
-| Turbine Detail View | True Age vs Calendar Age comparison, terrain badge, stress score, inspection history | True Age API from Pape |
-| Heatmap — Live Data | Connect map to real calculated stress data instead of terrain-class-only | True Age API |
-| Critical Action Report | Top 5% at-risk turbines, downloadable PDF | Pape's API + Jagger's PDF |
+### Sprint 2 Scope (CURRENT) ✅ UNBLOCKED
 
-**Sprint 2 dependencies from Pape:**
-- `GET /turbines/{id}` — needed for turbine detail page
-- `stress_multiplier` in API response — needed for True Age breakdown display
-- Inspections table — needed if we want inspection history on detail page (can skip for Sprint 2 MVP)
+**All dependencies now available from Pape's P1 push:**
+| Screen | Description | Status |
+|--------|-------------|--------|
+| Turbine Detail View | True Age vs Calendar Age comparison, terrain badge, stress score, inspection history | ✅ Unblocked — `GET /turbines/{id}`, `GET /turbines/{id}/inspections` |
+| Heatmap — Live Data | Connect map to real calculated stress data | ✅ Unblocked — `stress_multiplier` in API response |
+| Critical Action Report | Top 5% at-risk turbines, downloadable PDF | ✅ Unblocked for list — PDF generation still with Jagger |
+| Inspection Detail View | View inspection, update status, upload photos | ✅ Unblocked — `GET /inspections/{id}`, `PATCH /inspections/{id}`, `POST /inspections/{id}/attachment` |
 
-### Sprint 3 Scope (LATER — Expo Mobile)
-| Screen | Description | Depends On |
-|--------|-------------|------------|
-| Climb List | Prioritized inspection queue ranked by stress score | True Age API |
-| Inspection Form | Log findings, severity, photos, match against prediction | Inspections table + Storage |
-| Offline Sync | AsyncStorage for field use, auto-sync on reconnect | Supabase realtime |
+**Sprint 2 next steps:**
+- Wire turbine detail page to `GET /turbines/{id}`
+- Display inspection history using `GET /turbines/{id}/inspections`
+- Add stress explanation tooltip using `GET /turbines/{id}/stress-explanation`
+- Show failure predictions on detail page using `GET /turbines/{id}/failure-predictions`
+- Build inspection detail/edit screen for asset managers
+
+### Sprint 3 Scope (LATER — Expo Mobile) ✅ PARTIALLY UNBLOCKED
+| Screen | Description | Status |
+|--------|-------------|--------|
+| Climb List | Prioritized inspection queue ranked by stress score | ✅ Unblocked — can use `GET /turbines` sorted by `true_age_years` |
+| Inspection Form | Log findings, severity, photos, match against prediction | ✅ Unblocked — `POST /turbines/{id}/inspections`, `POST /inspections/{id}/attachment` |
+| Offline Sync | AsyncStorage for field use, auto-sync on reconnect | ⏳ Blocked — needs Supabase realtime subscriptions (not yet configured) |
+| Profile/Auth | Login, role display, fleet assignment | ✅ Partially unblocked — `GET /profile`, `PATCH /profile` (needs Supabase Auth setup) |
 
 ---
 

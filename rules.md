@@ -105,6 +105,45 @@ MAP:
 
 ---
 
+## Testing Requirements
+
+### API Integration Tests
+
+Before wiring any new endpoint into a UI component, write a test that confirms:
+
+1. The endpoint is reachable and returns the expected status code
+2. The response shape matches the TypeScript interface in `lib/types.ts`
+3. Error cases are handled (404, 500, network failure)
+
+### Unit Tests
+
+Every new function in `lib/api.ts` must have a corresponding test file in a `tests` folder next to it (e.g. `lib/tests/api.test.ts`). Test:
+
+1. Successful responses return correctly typed data
+2. 404 responses are handled gracefully (return null, not throw)
+3. Network errors throw with a readable message
+
+### End-to-End Flow Tests
+
+Before marking any integration complete, manually verify the full flow:
+
+1. Data loads from Pape's API (not mock data)
+2. The UI renders the data correctly (correct fields, correct formatting)
+3. Error states show when the API is unreachable
+4. Navigation between pages preserves state (e.g. clicking a turbine on the map, viewing detail, going back)
+
+### Test Before Commit Rule
+
+Do not commit any API integration work without running tests first. Run:
+
+1. `npx tsc --noEmit` (type check)
+2. `npm test` (unit tests)
+3. Manual verification in the browser at `localhost:3000`
+
+All three must pass before committing. If any test fails, fix it before moving on. Do not skip tests to save time.
+
+---
+
 ## File Naming
 
 - Components: `PascalCase.tsx` — e.g. `TrueAgeCard.tsx`, `StressHeatmap.tsx`

@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { MapPin, Wind, AlertTriangle, Activity, Loader2 } from "lucide-react";
+import { MapPin, Wind, Siren, Hourglass, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TERRAIN_CONFIG, STRESS_THRESHOLDS } from "@/lib/constants";
@@ -27,7 +27,6 @@ const StressHeatmap = dynamic(
 
 export default function DashboardPage() {
   const turbines = useFarmStore((s) => s.turbines);
-  const error = useFarmStore((s) => s.error);
   const fetchTurbines = useFarmStore((s) => s.fetchTurbines);
   const setSelectedTurbine = useFarmStore((s) => s.setSelectedTurbine);
 
@@ -66,46 +65,42 @@ export default function DashboardPage() {
     {
       label: "Total Turbines",
       value: stats.total > 0 ? stats.total.toLocaleString() : "—",
+      unit: "",
       icon: Wind,
       color: "text-brand-amber",
     },
     {
       label: "High Stress",
       value: stats.total > 0 ? stats.highStress.toLocaleString() : "—",
-      icon: AlertTriangle,
+      unit: "",
+      icon: Siren,
       color: "text-terrain-complex",
     },
     {
-      label: "Avg True Age",
-      value:
-        stats.avgTrueAge > 0 ? `${stats.avgTrueAge.toFixed(1)} yr` : "—",
-      icon: Activity,
+      label: "Average True\u00A0Age",
+      value: stats.avgTrueAge > 0 ? stats.avgTrueAge.toFixed(1) : "—",
+      unit: stats.avgTrueAge > 0 ? "yr" : "",
+      icon: Hourglass,
       color: "text-scada",
     },
     {
       label: "Sites Monitored",
       value: stats.sites > 0 ? stats.sites.toLocaleString() : "—",
+      unit: "",
       icon: MapPin,
       color: "text-terrain-coastal",
     },
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {error && (
-        <div className="mx-4 mt-4 p-3 rounded-lg bg-brand-surface border border-terrain-complex text-brand-text font-mono text-sm">
-          {error} — Is the backend running at{" "}
-          <code className="text-brand-amber">http://localhost:8000</code>?
-        </div>
-      )}
-      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-        {/* Map Area */}
-        <div className="flex-1 relative bg-brand-surface rounded-lg m-4 mr-0 lg:mr-4 overflow-hidden min-h-[300px]">
-          <StressHeatmap />
-        </div>
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] pt-2 px-4 pb-4 gap-4 overflow-hidden">
+      {/* Map Area */}
+      <div className="flex-1 relative bg-brand-surface rounded-lg overflow-hidden">
+        <StressHeatmap />
+      </div>
 
-        {/* Right Panel */}
-      <aside className="w-full lg:w-96 flex flex-col gap-4 p-4 overflow-y-auto">
+      {/* Right Panel */}
+      <aside className="w-full lg:w-[30rem] h-full flex flex-col gap-4 min-h-0">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 gap-3">
           {STAT_CARDS.map((stat) => {
@@ -115,16 +110,21 @@ export default function DashboardPage() {
                 key={stat.label}
                 className="bg-brand-surface border-brand-border"
               >
-                <CardContent className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Icon className={`h-5 w-5 ${stat.color}`} />
+                <CardContent className="p-3 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Icon className={`h-4 w-4 ${stat.color}`} />
                     <span className="text-sm font-body text-brand-muted">
                       {stat.label}
                     </span>
                   </div>
-                  <p className="font-mono font-semibold text-5xl text-brand-text">
-                    {stat.value}
-                  </p>
+                  <div className="font-mono font-semibold text-brand-text">
+                    <span className="text-2xl">{stat.value}</span>
+                    {stat.unit && (
+                      <span className="text-base ml-1 text-brand-muted">
+                        {stat.unit}
+                      </span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -134,7 +134,7 @@ export default function DashboardPage() {
         {/* Terrain Legend */}
         <Card className="bg-brand-surface border-brand-border">
           <CardHeader className="pb-3">
-            <CardTitle className="font-display font-extrabold text-base text-brand-text">
+            <CardTitle className="font-display font-extrabold text-base text-brand-text text-center">
               Terrain Classification
             </CardTitle>
           </CardHeader>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
         {/* Filter + Turbine List */}
         <Card className="bg-brand-surface border-brand-border flex-1 flex flex-col min-h-0">
           <CardHeader className="pb-3">
-            <CardTitle className="font-display font-extrabold text-base text-brand-text">
+            <CardTitle className="font-display font-extrabold text-base text-brand-text text-center">
               Turbine List
             </CardTitle>
             <div className="mt-2">
@@ -182,7 +182,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </aside>
-      </div>
     </div>
   );
 }

@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Map, Wind, ClipboardList, FileText } from "lucide-react";
+import { Map, Wind, Eye, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Logo from "./Logo";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: Map },
-  { href: "/dashboard/turbines", label: "Turbines", icon: Wind },
-  { href: "/dashboard/inspections", label: "Inspections", icon: ClipboardList },
-  { href: "/dashboard/reports", label: "Reports", icon: FileText },
+  { href: "/dashboard", label: "DASHBOARD", icon: Map },
+  { href: "/dashboard/turbines", label: "TURBINES", icon: Wind },
+  { href: "/inspections", label: "INSPECTIONS", icon: Eye },
+  { href: "/reports", label: "REPORTS", icon: FileText },
 ] as const;
 
 export default function Sidebar() {
@@ -22,9 +22,9 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-brand-surface border-r border-brand-border">
+    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-40 bg-brand-surface border-r border-brand-border">
       {/* Brand */}
-      <div className="flex items-center px-5 h-16 border-b border-brand-border">
+      <div className="flex items-center justify-center px-4 h-16 border-b border-brand-border overflow-hidden">
         <Logo size="md" />
       </div>
 
