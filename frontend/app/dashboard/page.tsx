@@ -65,39 +65,42 @@ export default function DashboardPage() {
     {
       label: "Total Turbines",
       value: stats.total > 0 ? stats.total.toLocaleString() : "—",
+      unit: "",
       icon: Wind,
       color: "text-brand-amber",
     },
     {
       label: "High Stress",
       value: stats.total > 0 ? stats.highStress.toLocaleString() : "—",
+      unit: "",
       icon: Siren,
       color: "text-terrain-complex",
     },
     {
       label: "Average True\u00A0Age",
-      value:
-        stats.avgTrueAge > 0 ? `${stats.avgTrueAge.toFixed(1)} yr` : "—",
+      value: stats.avgTrueAge > 0 ? stats.avgTrueAge.toFixed(1) : "—",
+      unit: stats.avgTrueAge > 0 ? "yr" : "",
       icon: Hourglass,
       color: "text-scada",
     },
     {
       label: "Sites Monitored",
       value: stats.sites > 0 ? stats.sites.toLocaleString() : "—",
+      unit: "",
       icon: MapPin,
       color: "text-terrain-coastal",
     },
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] pt-2 px-4 pb-4 gap-4">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] pt-2 px-4 pb-4 gap-4 overflow-hidden">
       {/* Map Area */}
       <div className="flex-1 relative bg-brand-surface rounded-lg overflow-hidden">
         <StressHeatmap />
       </div>
 
       {/* Right Panel */}
-      <aside className="w-full lg:w-[30rem] h-full flex flex-col gap-4 overflow-y-auto min-h-0">
+      <aside className="w-full lg:w-[30rem] h-full flex flex-col gap-4 min-h-0">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 gap-3">
           {STAT_CARDS.map((stat) => {
@@ -107,16 +110,21 @@ export default function DashboardPage() {
                 key={stat.label}
                 className="bg-brand-surface border-brand-border"
               >
-                <CardContent className="p-4 text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Icon className={`h-5 w-5 ${stat.color}`} />
-                    <span className="text-base font-body text-brand-muted">
+                <CardContent className="p-3 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                    <span className="text-sm font-body text-brand-muted">
                       {stat.label}
                     </span>
                   </div>
-                  <p className="font-mono font-semibold text-6xl text-brand-text">
-                    {stat.value}
-                  </p>
+                  <div className="font-mono font-semibold text-brand-text">
+                    <span className="text-2xl">{stat.value}</span>
+                    {stat.unit && (
+                      <span className="text-base ml-1 text-brand-muted">
+                        {stat.unit}
+                      </span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );

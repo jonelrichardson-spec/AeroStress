@@ -85,25 +85,43 @@ Four tables exist: `fleets`, `turbines`, `terrain_classifications`, `stress_calc
 
 ### API Endpoints
 
+**P1 — NOW AVAILABLE (Pape's latest push):**
+
+**Auth (Supabase JWT, Bearer token from `supabase.auth.getSession()`):**
+| Endpoint | Auth | Body/Params | Returns |
+|----------|------|-------------|---------|
+| `GET /profile` | ✅ Bearer | — | `{ id, user_id, role, fleet_id, created_at, updated_at }` |
+| `PATCH /profile` | ✅ Bearer | `{ role?, fleet_id? }` | Same as GET /profile |
+
+**Turbine Detail:**
+| Endpoint | Auth | Returns |
+|----------|------|---------|
+| `GET /turbines/{id}` | ❌ | Single turbine (same shape as list + `stress_multiplier`) |
+| `GET /turbines/{id}/stress-explanation` | ❌ | `{ explanation: string }` |
+| `GET /turbines/{id}/failure-predictions` | ❌ | `{ predictions: [{ component, condition }] }` |
+| `GET /turbines/{id}/inspections` | ❌ | `Inspection[]` |
+
+**Inspections CRUD:**
+| Endpoint | Auth | Body/Params | Returns |
+|----------|------|-------------|---------|
+| `POST /turbines/{id}/inspections` | ❌ | `{ conducted_at?, inspector_name?, component_inspected?, condition_found?, severity_rating?, notes? }` | `Inspection` |
+| `GET /inspections/{id}` | ❌ | — | `Inspection` |
+| `PATCH /inspections/{id}` | ❌ | `{ status?, component_inspected?, condition_found?, severity_rating?, notes?, prediction_match?, attachment_url? }` | `Inspection` |
+| `POST /inspections/{id}/attachment` | ❌ | `multipart/form-data` file upload | `Inspection` with `attachment_url` |
+| `GET /inspections/{id}/report` | ❌ | — | PDF file |
+
+**Fleet:**
+| Endpoint | Auth | Params | Returns |
+|----------|------|--------|---------|
+| `GET /fleets/{id}/projected-savings` | ❌ | `?annual_om_per_turbine=50000` | `{ fleet_id, annual_om_per_turbine, total_turbines, high_risk_turbines_top_20pct, recommended_reallocation_percent, message }` |
+
+**Auth Note:** Only `GET /profile` and `PATCH /profile` require the Bearer token from Supabase Auth. All other endpoints are currently unauthenticated.
+
 **Sprint 1 — BUILT:**
 | Endpoint | Returns |
 |----------|---------|
 | `GET /turbines?limit=500&offset=0` | All turbines with terrain + stress data |
 | `GET /fleets/{fleet_id}/turbines?sort=stress` | Turbines for a specific fleet |
-
-**Sprint 1 — NOT YET:**
-| Endpoint | Status |
-|----------|--------|
-| `GET /turbines/{id}` | Not built — ask Pape |
-| Auth endpoints | Not built |
-
-**Sprint 2 — AVAILABLE:**
-- `true_age_years` already returned in GET /turbines response
-- Heatmap data = use GET /turbines and map lat/lng client-side
-
-**Sprint 2 — NOT YET:**
-- Inspection submission endpoint
-- Inspection history endpoint
 
 ### API Response Shape ✅ CONFIRMED
 ```json
@@ -133,14 +151,20 @@ Four tables exist: `fleets`, `turbines`, `terrain_classifications`, `stress_calc
 - Terrain classification: placeholder heuristic (latitude-based, not USGS yet)
 - USGS elevation integration: not yet — planned for later
 
-### NOT YET BUILT (Do not build screens that depend on these — ask Jo)
-- Supabase Auth (no login/signup yet)
-- Profiles/users table
-- Inspections table
-- Storage buckets for photos
-- Role assignment (asset_manager vs technician)
-- GET /turbines/{id} endpoint
-- Production deployment URL
+### STILL PENDING (Not yet available from Pape)
+- ❌ Supabase Auth full setup (login/signup UI, session management)
+- ❌ Storage buckets for photos (attachment upload works via API, but direct storage access not configured)
+- ❌ Supabase realtime subscriptions (for offline sync)
+- ❌ Production deployment URL (still TBD)
+
+### NOW AVAILABLE FROM PAPE (P1 Push)
+- ✅ `GET /turbines/{id}` — single turbine detail
+- ✅ Inspections table and CRUD endpoints
+- ✅ Profiles table and `GET /profile`, `PATCH /profile`
+- ✅ Stress explanation and failure predictions endpoints
+- ✅ Fleet projected savings endpoint
+- ✅ Inspection attachment upload via multipart form-data
+- ✅ PDF report generation for inspections via `GET /inspections/{id}/report`
 
 ---
 
@@ -178,27 +202,32 @@ interface Fleet {
   turbines?: Turbine[];
 }
 
-// NOT YET — draft for when Pape builds inspections
+// ✅ BUILT — Inspection interface from Pape's P1 push
 interface Inspection {
   id: string;
   turbine_id: string;
-  technician_id: string;
-  prediction: string;
-  finding: string;
-  match_status: 'confirmed' | 'partial' | 'not_found';
-  severity: number;
-  notes: string;
-  photos: string[];
-  completed_at: string;
-  synced: boolean;
+  conducted_at: string | null;
+  inspector_name: string | null;
+  status: 'pending' | 'completed' | 'cancelled';
+  component_inspected: string | null;
+  condition_found: string | null;
+  severity_rating: number | null;
+  notes: string | null;
+  submitted_at: string | null;
+  prediction_match: boolean | null;
+  attachment_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-// NOT YET — draft for when Pape builds auth
+// ✅ BUILT — UserProfile interface from Pape's P1 push
 interface UserProfile {
   id: string;
-  full_name: string;
+  user_id: string;  // Supabase auth.users.id
   role: 'asset_manager' | 'technician';
-  fleet_id: string;
+  fleet_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 ```
 
@@ -374,24 +403,30 @@ aerostress-dashboard/
 ### Sprint 1 — COMPLETE
 Dashboard layout, Mapbox map with SDF triangle markers, terrain filters, turbine list, stat cards, error states. Two commits merged. Login/Signup blocked on Supabase Auth (not built by Pape yet).
 
-### Sprint 2 Scope (CURRENT)
-| Screen | Description | Depends On |
-|--------|-------------|------------|
-| Turbine Detail View | True Age vs Calendar Age comparison, terrain badge, stress score, inspection history | True Age API from Pape |
-| Heatmap — Live Data | Connect map to real calculated stress data instead of terrain-class-only | True Age API |
-| Critical Action Report | Top 5% at-risk turbines, downloadable PDF | Pape's API + Jagger's PDF |
+### Sprint 2 Scope (CURRENT) ✅ UNBLOCKED
 
-**Sprint 2 dependencies from Pape:**
-- `GET /turbines/{id}` — needed for turbine detail page
-- `stress_multiplier` in API response — needed for True Age breakdown display
-- Inspections table — needed if we want inspection history on detail page (can skip for Sprint 2 MVP)
+**All dependencies now available from Pape's P1 push:**
+| Screen | Description | Status |
+|--------|-------------|--------|
+| Turbine Detail View | True Age vs Calendar Age comparison, terrain badge, stress score, inspection history | ✅ Unblocked — `GET /turbines/{id}`, `GET /turbines/{id}/inspections` |
+| Heatmap — Live Data | Connect map to real calculated stress data | ✅ Unblocked — `stress_multiplier` in API response |
+| Critical Action Report | Top 5% at-risk turbines, downloadable PDF | ✅ Unblocked for list — PDF generation still with Jagger |
+| Inspection Detail View | View inspection, update status, upload photos | ✅ Unblocked — `GET /inspections/{id}`, `PATCH /inspections/{id}`, `POST /inspections/{id}/attachment` |
 
-### Sprint 3 Scope (LATER — Expo Mobile)
-| Screen | Description | Depends On |
-|--------|-------------|------------|
-| Climb List | Prioritized inspection queue ranked by stress score | True Age API |
-| Inspection Form | Log findings, severity, photos, match against prediction | Inspections table + Storage |
-| Offline Sync | AsyncStorage for field use, auto-sync on reconnect | Supabase realtime |
+**Sprint 2 next steps:**
+- Wire turbine detail page to `GET /turbines/{id}`
+- Display inspection history using `GET /turbines/{id}/inspections`
+- Add stress explanation tooltip using `GET /turbines/{id}/stress-explanation`
+- Show failure predictions on detail page using `GET /turbines/{id}/failure-predictions`
+- Build inspection detail/edit screen for asset managers
+
+### Sprint 3 Scope (LATER — Expo Mobile) ✅ PARTIALLY UNBLOCKED
+| Screen | Description | Status |
+|--------|-------------|--------|
+| Climb List | Prioritized inspection queue ranked by stress score | ✅ Unblocked — can use `GET /turbines` sorted by `true_age_years` |
+| Inspection Form | Log findings, severity, photos, match against prediction | ✅ Unblocked — `POST /turbines/{id}/inspections`, `POST /inspections/{id}/attachment` |
+| Offline Sync | AsyncStorage for field use, auto-sync on reconnect | ⏳ Blocked — needs Supabase realtime subscriptions (not yet configured) |
+| Profile/Auth | Login, role display, fleet assignment | ✅ Partially unblocked — `GET /profile`, `PATCH /profile` (needs Supabase Auth setup) |
 
 ---
 
