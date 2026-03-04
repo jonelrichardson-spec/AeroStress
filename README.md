@@ -12,6 +12,8 @@ See [prd.md](./prd.md) for full product requirements.
 └── prd.md       # Product requirements document
 ```
 
+**Ownership:** Backend and frontend are maintained separately. Backend devs own `backend/`; frontend devs own `frontend/`.
+
 ## Setup
 
-See `backend/README.md` and `frontend/README.md` for setup instructions.
+See `backend/README.md` for backend setup. Frontend setup is owned by the frontend team.
