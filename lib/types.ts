@@ -65,7 +65,8 @@ export interface StressExplanation {
 // Failure prediction response
 export interface FailurePrediction {
   component: string;
-  condition: string;
+  probability: number;
+  severity: 1 | 2 | 3;
 }
 
 export interface FailurePredictionsResponse {
