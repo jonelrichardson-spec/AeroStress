@@ -8,11 +8,14 @@ interface FarmState {
   error: string | null;
   selectedTurbineId: string | null;
   terrainFilter: TerrainClass[] | null;
+  mapTheme: "light" | "dark";
 
   fetchTurbines: () => Promise<void>;
   setSelectedTurbine: (id: string | null) => void;
   setTerrainFilter: (classes: TerrainClass[] | null) => void;
   toggleTerrainFilter: (terrainClass: TerrainClass) => void;
+  setMapTheme: (theme: "light" | "dark") => void;
+  toggleMapTheme: () => void;
   getFilteredTurbines: () => Turbine[];
 }
 
@@ -22,6 +25,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   error: null,
   selectedTurbineId: null,
   terrainFilter: null,
+  mapTheme: "light",
 
   fetchTurbines: async () => {
     set({ isLoading: true, error: null });
@@ -43,6 +47,15 @@ export const useFarmStore = create<FarmState>((set, get) => ({
 
   setTerrainFilter: (classes) => {
     set({ terrainFilter: classes });
+  },
+
+  setMapTheme: (theme) => {
+    set({ mapTheme: theme });
+  },
+
+  toggleMapTheme: () => {
+    const current = get().mapTheme;
+    set({ mapTheme: current === "light" ? "dark" : "light" });
   },
 
   toggleTerrainFilter: (terrainClass) => {

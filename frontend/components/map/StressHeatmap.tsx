@@ -9,7 +9,8 @@ import MapGL, {
   type MapMouseEvent,
 } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Moon, Sun } from "lucide-react";
 import { useFarmStore } from "@/stores/useFarmStore";
 import { MAP_DEFAULTS, TERRAIN_CONFIG } from "@/lib/constants";
 import {
@@ -24,6 +25,11 @@ import type { Turbine, TerrainClass } from "@/lib/types";
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const TURBINE_LAYER_ID = "turbine-markers";
 
+const MAP_STYLES = {
+  light: "mapbox://styles/mapbox/standard",
+  dark: "mapbox://styles/mapbox/dark-v11",
+} as const;
+
 export default function StressHeatmap() {
   const mapRef = useRef<MapRef>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -31,6 +37,8 @@ export default function StressHeatmap() {
   const terrainFilter = useFarmStore((s) => s.terrainFilter);
   const selectedTurbineId = useFarmStore((s) => s.selectedTurbineId);
   const setSelectedTurbine = useFarmStore((s) => s.setSelectedTurbine);
+  const mapTheme = useFarmStore((s) => s.mapTheme);
+  const toggleMapTheme = useFarmStore((s) => s.toggleMapTheme);
 
   const filteredTurbines = useFarmStore((s) => s.getFilteredTurbines());
 
@@ -60,6 +68,10 @@ export default function StressHeatmap() {
     setSelectedTurbine(null);
   }, [setSelectedTurbine]);
 
+  const handleThemeToggle = useCallback(() => {
+    toggleMapTheme();
+  }, [toggleMapTheme]);
+
   const handleMapLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (map && !map.hasImage(TRIANGLE_IMAGE_ID)) {
@@ -80,21 +92,37 @@ export default function StressHeatmap() {
   }
 
   return (
-    <MapGL
-      ref={mapRef}
-      mapboxAccessToken={MAPBOX_TOKEN}
-      mapStyle={MAP_DEFAULTS.STYLE}
-      initialViewState={{
-        longitude: MAP_DEFAULTS.CENTER[0],
-        latitude: MAP_DEFAULTS.CENTER[1],
-        zoom: MAP_DEFAULTS.ZOOM,
-      }}
-      interactiveLayerIds={[TURBINE_LAYER_ID]}
-      onClick={handleMapClick}
-      onLoad={handleMapLoad}
-      cursor="pointer"
-      style={{ width: "100%", height: "100%" }}
-    >
+    <div className="relative w-full h-full">
+      {/* Theme Toggle Button */}
+      <button
+        onClick={handleThemeToggle}
+        className="absolute top-4 left-4 z-10 p-2.5 rounded-lg bg-brand-surface/90 backdrop-blur-sm border border-brand-border text-brand-text hover:bg-brand-surface2 transition-colors shadow-lg"
+        aria-label={
+          mapTheme === "light" ? "Switch to dark mode" : "Switch to light mode"
+        }
+      >
+        {mapTheme === "light" ? (
+          <Moon className="h-5 w-5" />
+        ) : (
+          <Sun className="h-5 w-5" />
+        )}
+      </button>
+
+      <MapGL
+        ref={mapRef}
+        mapboxAccessToken={MAPBOX_TOKEN}
+        mapStyle={MAP_STYLES[mapTheme]}
+        initialViewState={{
+          longitude: MAP_DEFAULTS.CENTER[0],
+          latitude: MAP_DEFAULTS.CENTER[1],
+          zoom: MAP_DEFAULTS.ZOOM,
+        }}
+        interactiveLayerIds={[TURBINE_LAYER_ID]}
+        onClick={handleMapClick}
+        onLoad={handleMapLoad}
+        cursor="pointer"
+        style={{ width: "100%", height: "100%" }}
+      >
       {mapLoaded && (
       <Source id="turbines" type="geojson" data={geojson}>
         {/* Outer glow for selected turbine */}
@@ -146,7 +174,8 @@ export default function StressHeatmap() {
           <TurbinePopup turbine={selectedTurbine} />
         </Popup>
       )}
-    </MapGL>
+      </MapGL>
+    </div>
   );
 }
 
@@ -193,6 +222,13 @@ function TurbinePopup({ turbine }: { turbine: Turbine }) {
           </p>
         </div>
       </div>
+
+      <Link
+        href={`/dashboard/turbines/${turbine.id}`}
+        className="block mt-3 text-center text-xs font-mono font-semibold text-brand-bg bg-brand-amber/90 hover:bg-brand-amber rounded px-3 py-1.5 transition-colors"
+      >
+        View Details
+      </Link>
     </div>
   );
 }

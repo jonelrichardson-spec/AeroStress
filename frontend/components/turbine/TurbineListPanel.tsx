@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Wind, AlertTriangle, Loader2 } from "lucide-react";
 import { useFarmStore } from "@/stores/useFarmStore";
 import { TERRAIN_CONFIG } from "@/lib/constants";
@@ -89,10 +90,11 @@ function TurbineListItem({
   const config = TERRAIN_CONFIG[turbine.terrain_class as TerrainClass];
 
   return (
-    <button
+    <Link
+      href={`/dashboard/turbines/${turbine.id}`}
       onClick={onClick}
       className={cn(
-        "w-full text-left px-3 py-2.5 rounded-lg transition-colors",
+        "block w-full text-left px-3 py-2.5 rounded-lg transition-colors",
         isSelected
           ? "bg-brand-surface2 ring-1 ring-brand-amber/40"
           : "hover:bg-brand-surface2"
@@ -154,6 +156,6 @@ function TurbineListItem({
           </p>
         </div>
       </div>
-    </button>
+    </Link>
   );
 }

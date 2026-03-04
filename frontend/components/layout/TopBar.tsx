@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import MobileNav from "./MobileNav";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/dashboard/turbines": "Turbines",
-  "/inspections": "Inspections",
-  "/reports": "Reports",
+  "/dashboard": "DASHBOARD",
+  "/dashboard/turbines": "TURBINES",
+  "/inspections": "INSPECTIONS",
+  "/reports": "REPORTS",
 };
 
 function getPageTitle(pathname: string): string {
@@ -20,7 +20,7 @@ function getPageTitle(pathname: string): string {
     if (pathname.startsWith(path) && path !== "/dashboard") return title;
   }
 
-  return "Dashboard";
+  return "DASHBOARD";
 }
 
 export default function TopBar() {
@@ -38,10 +38,10 @@ export default function TopBar() {
 
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="text-brand-muted hover:text-brand-text">
-          <Bell className="h-5 w-5" />
+          <Bell className="h-6 w-6" />
         </Button>
         <Button variant="ghost" size="icon" className="text-brand-muted hover:text-brand-text">
-          <User className="h-5 w-5" />
+          <User className="h-6 w-6" />
         </Button>
       </div>
     </header>
