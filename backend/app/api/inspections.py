@@ -7,7 +7,7 @@ POST /inspections/{id}/attachment - upload photo/file; stores in Supabase Storag
 
 import os
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 import httpx
@@ -25,6 +25,7 @@ from app.models.schemas import (
     RepairRecommendationUpdate,
 )
 from app.services.pdf_reports import build_inspection_report_pdf
+from app.services.stress import apply_stress_overrides
 
 router = APIRouter(prefix="/inspections", tags=["inspections"])
 
@@ -68,7 +69,7 @@ def get_inspection_report_pdf(inspection_id: UUID):
         raise HTTPException(status_code=400, detail="Inspection has no turbine_id")
     t_res = (
         supabase.table("turbines")
-        .select("id, latitude, longitude, model, state")
+        .select("id, latitude, longitude, model, state, calendar_age_years")
         .eq("id", str(turbine_id))
         .execute()
     )
@@ -77,13 +78,16 @@ def get_inspection_report_pdf(inspection_id: UUID):
     turbine = dict(t_res.data[0])
     s_res = (
         supabase.table("stress_calculations")
-        .select("true_age_years, terrain_class")
+        .select("true_age_years, terrain_class, stress_multiplier")
         .eq("turbine_id", str(turbine_id))
         .execute()
     )
     if s_res.data and len(s_res.data) > 0:
-        turbine["true_age_years"] = s_res.data[0].get("true_age_years")
-        turbine["terrain_class"] = s_res.data[0].get("terrain_class")
+        s = s_res.data[0]
+        turbine["true_age_years"] = s.get("true_age_years")
+        turbine["terrain_class"] = s.get("terrain_class")
+        turbine["stress_multiplier"] = s.get("stress_multiplier")
+    apply_stress_overrides(supabase, [turbine])
     rec_res = (
         supabase.table("inspection_repair_recommendations")
         .select("recommended_action, estimated_cost_low, estimated_cost_high")
@@ -204,7 +208,7 @@ def _notify_inspection_submitted(inspection_id: UUID, inspection: dict) -> None:
         pass  # Don't fail the request if webhook fails
 
 
-@router.get("/{inspection_id}/repair-recommendation", response_model=RepairRecommendation | None)
+@router.get("/{inspection_id}/repair-recommendation", response_model=Optional[RepairRecommendation])
 def get_repair_recommendation(inspection_id: UUID):
     """P2: Get repair recommendation for this inspection (if set)."""
     supabase = get_supabase()

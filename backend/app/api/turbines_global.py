@@ -15,6 +15,7 @@ from fastapi import APIRouter, HTTPException, Query
 from app.db import get_supabase
 from app.models.schemas import Inspection, InspectionCreate, RepairNote, RepairNoteCreate, TurbineListItem
 from app.services.failure_predictions import get_failure_predictions
+from app.services.stress import apply_stress_overrides
 from app.services.stress_explanation import get_stress_explanation
 
 router = APIRouter(prefix="/turbines", tags=["turbines"])
@@ -57,6 +58,7 @@ def list_turbines(
             t["true_age_years"] = s.get("true_age_years")
             t["terrain_class"] = s.get("terrain_class")
             t["stress_multiplier"] = s.get("stress_multiplier")
+        apply_stress_overrides(supabase, turbines)
 
     return turbines
 
@@ -88,72 +90,71 @@ def get_turbine(turbine_id: UUID):
         turbine["true_age_years"] = s.get("true_age_years")
         turbine["terrain_class"] = s.get("terrain_class")
         turbine["stress_multiplier"] = s.get("stress_multiplier")
+    apply_stress_overrides(supabase, [turbine])
     return turbine
 
 
 @router.get("/{turbine_id}/stress-explanation")
 def get_turbine_stress_explanation(turbine_id: UUID):
-    """P1: Plain-language explanation of stress (e.g. structural wear of X-year-old unit in IEC class)."""
+    """P1: Plain-language explanation of stress (P2: uses recalibration overrides when present)."""
     supabase = get_supabase()
     t_res = (
         supabase.table("turbines")
-        .select("id, calendar_age_years")
+        .select("id, calendar_age_years, model")
         .eq("id", str(turbine_id))
         .execute()
     )
     if not t_res.data or len(t_res.data) == 0:
         raise HTTPException(status_code=404, detail="Turbine not found")
-    turbine = t_res.data[0]
+    turbine = dict(t_res.data[0])
     s_res = (
         supabase.table("stress_calculations")
-        .select("true_age_years, terrain_class")
+        .select("true_age_years, terrain_class, stress_multiplier")
         .eq("turbine_id", str(turbine_id))
         .execute()
     )
-    true_age = None
-    terrain_class = None
     if s_res.data and len(s_res.data) > 0:
-        true_age = s_res.data[0].get("true_age_years")
-        terrain_class = s_res.data[0].get("terrain_class")
+        s = s_res.data[0]
+        turbine["true_age_years"] = s.get("true_age_years")
+        turbine["terrain_class"] = s.get("terrain_class")
+        turbine["stress_multiplier"] = s.get("stress_multiplier")
+    apply_stress_overrides(supabase, [turbine])
     cal_age = turbine.get("calendar_age_years") or 0
-    explanation = get_stress_explanation(
-        true_age or cal_age,
-        cal_age,
-        terrain_class,
-    )
+    true_age = turbine.get("true_age_years") or cal_age
+    terrain_class = turbine.get("terrain_class")
+    explanation = get_stress_explanation(true_age, cal_age, terrain_class)
     return {"turbine_id": str(turbine_id), "explanation": explanation}
 
 
 @router.get("/{turbine_id}/failure-predictions")
 def list_failure_predictions(turbine_id: UUID):
-    """Static, rules-based failure-mode suggestions for this turbine (P0)."""
+    """Static, rules-based failure-mode suggestions for this turbine (P0). P2: uses recalibration overrides."""
     supabase = get_supabase()
     t_res = (
         supabase.table("turbines")
-        .select("id, calendar_age_years")
+        .select("id, calendar_age_years, model")
         .eq("id", str(turbine_id))
         .execute()
     )
     if not t_res.data or len(t_res.data) == 0:
         raise HTTPException(status_code=404, detail="Turbine not found")
-    turbine = t_res.data[0]
+    turbine = dict(t_res.data[0])
     s_res = (
         supabase.table("stress_calculations")
-        .select("true_age_years, terrain_class")
+        .select("true_age_years, terrain_class, stress_multiplier")
         .eq("turbine_id", str(turbine_id))
         .execute()
     )
-    true_age = None
-    terrain_class = None
     if s_res.data and len(s_res.data) > 0:
-        true_age = s_res.data[0].get("true_age_years")
-        terrain_class = s_res.data[0].get("terrain_class")
+        s = s_res.data[0]
+        turbine["true_age_years"] = s.get("true_age_years")
+        turbine["terrain_class"] = s.get("terrain_class")
+        turbine["stress_multiplier"] = s.get("stress_multiplier")
+    apply_stress_overrides(supabase, [turbine])
     cal_age = turbine.get("calendar_age_years") or 0
-    predictions = get_failure_predictions(
-        terrain_class or "flat",
-        true_age or cal_age,
-        cal_age,
-    )
+    true_age = turbine.get("true_age_years") or cal_age
+    terrain_class = turbine.get("terrain_class") or "flat"
+    predictions = get_failure_predictions(terrain_class, true_age, cal_age)
     return {"turbine_id": str(turbine_id), "predictions": predictions}
 
 

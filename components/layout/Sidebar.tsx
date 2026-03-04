@@ -9,8 +9,8 @@ import Logo from "./Logo";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: Map },
   { href: "/dashboard/turbines", label: "Turbines", icon: Wind },
-  { href: "/inspections", label: "Inspections", icon: ClipboardList },
-  { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/dashboard/inspections", label: "Inspections", icon: ClipboardList },
+  { href: "/dashboard/reports", label: "Reports", icon: FileText },
 ] as const;
 
 export default function Sidebar() {

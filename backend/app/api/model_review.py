@@ -5,6 +5,7 @@ PATCH /model-review-flags/{id} — resolve a flag (set resolved_at, optional not
 """
 
 from datetime import datetime, timezone
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
@@ -22,7 +23,7 @@ def _normalize_row(row: dict) -> dict:
 
 
 @router.get("", response_model=list[ModelReviewFlag])
-def list_model_review_flags(resolved: bool | None = Query(None, description="Filter by resolved (true/false); omit for all")):
+def list_model_review_flags(resolved: Optional[bool] = Query(None, description="Filter by resolved (true/false); omit for all")):
     """List model review flags. Optional ?resolved=false for open only."""
     supabase = get_supabase()
     q = supabase.table("model_review_flags").select("*").order("created_at", desc=True)

@@ -9,6 +9,7 @@ from fastapi.responses import Response
 from app.db import get_supabase
 from app.models.schemas import Fleet, FleetCreate, TurbineListItem
 from app.services.pdf_reports import build_critical_action_pdf
+from app.services.stress import apply_stress_overrides
 
 router = APIRouter(prefix="/fleets", tags=["fleets"])
 
@@ -79,6 +80,7 @@ def get_critical_action(
         t["true_age_years"] = s.get("true_age_years")
         t["terrain_class"] = s.get("terrain_class")
         t["stress_multiplier"] = s.get("stress_multiplier")
+    apply_stress_overrides(supabase, turbines)
     turbines.sort(key=lambda x: x.get("true_age_years") or 0, reverse=True)
     n = max(1, int(len(turbines) * (top_percent / 100.0)))
     return turbines[:n]
@@ -116,6 +118,7 @@ def get_critical_action_report_pdf(
             t["true_age_years"] = s.get("true_age_years")
             t["terrain_class"] = s.get("terrain_class")
             t["stress_multiplier"] = s.get("stress_multiplier")
+        apply_stress_overrides(supabase, turbines)
         turbines.sort(key=lambda x: x.get("true_age_years") or 0, reverse=True)
         n = max(1, int(len(turbines) * (top_percent / 100.0)))
         turbines = turbines[:n]
@@ -134,12 +137,12 @@ def get_projected_savings(
 ):
     """
     P1: Simple projected savings / ROI message for reallocating O&M to high-risk turbines.
-    Uses fleet stress distribution; no dollar guarantees (per PRD).
+    Uses fleet stress distribution (with P2 overrides applied); no dollar guarantees (per PRD).
     """
     supabase = get_supabase()
     result = (
         supabase.table("turbines")
-        .select("id")
+        .select("id, model, calendar_age_years")
         .eq("fleet_id", str(fleet_id))
         .execute()
     )
@@ -147,17 +150,26 @@ def get_projected_savings(
     if not turbines:
         return {
             "fleet_id": str(fleet_id),
-            "message": "No turbines in this fleet. Add turbines to see projected savings.",
+            "annual_om_per_turbine": annual_om_per_turbine,
+            "total_turbines": 0,
+            "high_risk_turbines_top_20pct": 0,
             "recommended_reallocation_percent": 0,
+            "message": "No turbines in this fleet. Add turbines to see projected savings.",
         }
     stress_res = (
         supabase.table("stress_calculations")
-        .select("turbine_id, true_age_years")
+        .select("turbine_id, true_age_years, terrain_class, stress_multiplier")
         .in_("turbine_id", [t["id"] for t in turbines])
         .execute()
     )
-    stress_map = {s["turbine_id"]: s.get("true_age_years") or 0 for s in (stress_res.data or [])}
-    true_ages = [stress_map.get(t["id"], 0) for t in turbines]
+    stress_map = {s["turbine_id"]: s for s in (stress_res.data or [])}
+    for t in turbines:
+        s = stress_map.get(t["id"], {})
+        t["true_age_years"] = s.get("true_age_years")
+        t["terrain_class"] = s.get("terrain_class")
+        t["stress_multiplier"] = s.get("stress_multiplier")
+    apply_stress_overrides(supabase, turbines)
+    true_ages = [t.get("true_age_years") or 0 for t in turbines]
     true_ages.sort(reverse=True)
     n_high = max(1, int(len(true_ages) * 0.2))  # top 20%
     high_risk_count = n_high
@@ -209,6 +221,7 @@ def get_blind_spots(
         t["true_age_years"] = s.get("true_age_years")
         t["terrain_class"] = s.get("terrain_class")
         t["stress_multiplier"] = s.get("stress_multiplier")
+    apply_stress_overrides(supabase, turbines)
     insp = (
         supabase.table("inspections")
         .select("turbine_id")

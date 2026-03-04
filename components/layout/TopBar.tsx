@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import MobileNav from "./MobileNav";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "DASHBOARD",
-  "/dashboard/turbines": "TURBINES",
-  "/inspections": "INSPECTIONS",
-  "/reports": "REPORTS",
+  "/dashboard": "Dashboard",
+  "/dashboard/turbines": "Turbines",
+  "/dashboard/inspections": "Inspections",
+  "/dashboard/reports": "Reports",
 };
 
 function getPageTitle(pathname: string): string {
