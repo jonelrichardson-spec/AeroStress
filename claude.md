@@ -339,6 +339,125 @@ Usage in components: `bg-brand-bg`, `text-brand-muted`, `border-brand-border`, `
 
 ---
 
+## UI Layout Specifications ✅ CRITICAL
+
+**These specifications were finalized after Sprint 1 merge. DO NOT modify without explicit approval.**
+
+### Sidebar (`components/layout/Sidebar.tsx`)
+```typescript
+// Container
+className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-40 bg-brand-surface border-r border-brand-border"
+
+// ⚠️ CRITICAL: z-40 ensures sidebar renders above TopBar (z-30)
+
+// Logo Header
+className="flex items-center justify-center px-4 h-16 border-b border-brand-border overflow-hidden"
+<Logo size="md" /> // NOT sm or lg — md fits perfectly within 256px width
+
+// Navigation Items
+NAV_ITEMS = [
+  { href: "/dashboard", label: "DASHBOARD", icon: Map },
+  { href: "/dashboard/turbines", label: "TURBINES", icon: Wind },
+  { href: "/inspections", label: "INSPECTIONS", icon: Eye },  // NOT /dashboard/inspections
+  { href: "/reports", label: "REPORTS", icon: FileText },      // NOT /dashboard/reports
+]
+
+// ⚠️ CRITICAL: Labels MUST be uppercase
+// ⚠️ CRITICAL: Inspections/Reports routes are top-level (/inspections, /reports)
+// ⚠️ CRITICAL: Icons: Eye for Inspections, FileText for Reports
+```
+
+### TopBar (`components/layout/TopBar.tsx`)
+```typescript
+// Container
+className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 md:px-6 bg-brand-bg/80 backdrop-blur-sm border-b border-brand-border"
+
+// Page Titles (MUST match Sidebar labels)
+PAGE_TITLES = {
+  "/dashboard": "DASHBOARD",
+  "/dashboard/turbines": "TURBINES",
+  "/inspections": "INSPECTIONS",
+  "/reports": "REPORTS",
+}
+
+// ⚠️ CRITICAL: All titles MUST be uppercase
+// ⚠️ CRITICAL: Routes match Sidebar (top-level for Inspections/Reports)
+
+// Icon Sizes
+<Bell className="h-6 w-6" />
+<User className="h-6 w-6" />
+// ⚠️ NOT h-5 w-5 — use h-6 w-6 for prominence
+```
+
+### MobileNav (`components/layout/MobileNav.tsx`)
+```typescript
+// Uses same NAV_ITEMS as Sidebar
+// ⚠️ CRITICAL: Keep in sync with Sidebar routes and labels
+```
+
+### Dashboard Layout (`app/dashboard/layout.tsx`)
+```typescript
+// Content area offset for sidebar
+<div className="md:pl-64 flex flex-col min-h-screen">
+  <TopBar />
+  <main className="flex-1">{children}</main>
+</div>
+
+// ⚠️ CRITICAL: md:pl-64 (256px) matches sidebar width (md:w-64)
+```
+
+### Dashboard Page (`app/dashboard/page.tsx`)
+```typescript
+// Main container
+className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] pt-2 px-4 pb-4 gap-4 overflow-hidden"
+// ⚠️ CRITICAL: overflow-hidden prevents page scrolling
+
+// Stat Cards
+<span className="text-2xl">{stat.value}</span>  // NOT text-6xl
+{stat.unit && (
+  <span className="text-base ml-1 text-brand-muted">{stat.unit}</span>
+)}
+// ⚠️ CRITICAL: Separate number (text-2xl) and unit (text-base) to prevent overflow
+
+// Right Panel
+className="w-full lg:w-[30rem] h-full flex flex-col gap-4 min-h-0"
+// ⚠️ CRITICAL: min-h-0 allows flex children to scroll
+
+// Turbine List Card
+className="bg-brand-surface border-brand-border flex-1 flex flex-col min-h-0"
+<CardContent className="flex-1 overflow-y-auto">
+  <TurbineListPanel />
+</CardContent>
+// ⚠️ CRITICAL: Only turbine list scrolls, not entire page
+```
+
+### StressHeatmap (`components/map/StressHeatmap.tsx`)
+```typescript
+// Map must re-register triangle image on style changes
+const handleStyleData = useCallback(() => {
+  const map = mapRef.current?.getMap();
+  if (map && !map.hasImage(TRIANGLE_IMAGE_ID)) {
+    map.addImage(TRIANGLE_IMAGE_ID, createTriangleImage(), { sdf: true });
+  }
+}, []);
+
+<MapGL
+  onLoad={handleMapLoad}
+  onStyleData={handleStyleData}  // ⚠️ CRITICAL for dark mode
+/>
+
+// ⚠️ CRITICAL: onStyleData re-registers triangle image when light/dark mode toggles
+// Without this, triangles disappear in dark mode
+```
+
+### Constants (`lib/constants.ts`)
+```typescript
+// ⚠️ NO DUPLICATES: Each constant defined exactly once
+export const KW_TO_MW_DIVISOR = 1000;  // Line 68 ONLY
+```
+
+---
+
 ## File Structure
 
 ```
