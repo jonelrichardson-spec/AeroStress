@@ -371,19 +371,20 @@ aerostress-dashboard/
 
 ## Screen Inventory
 
-### Sprint 1 Scope (CURRENT)
-| Screen | Description | Depends On |
-|--------|-------------|------------|
-| Dashboard / Map View | Mapbox heatmap showing all turbines color-coded by terrain class. Sidebar with turbine list, filter by terrain type. | Supabase turbine data seeded |
-| Login | Email/password via Supabase Auth | Supabase Auth configured |
-| Signup / Onboarding | Create account, assign to farm | Auth + farm table |
+### Sprint 1 — COMPLETE
+Dashboard layout, Mapbox map with SDF triangle markers, terrain filters, turbine list, stat cards, error states. Two commits merged. Login/Signup blocked on Supabase Auth (not built by Pape yet).
 
-### Sprint 2 Scope (NEXT)
+### Sprint 2 Scope (CURRENT)
 | Screen | Description | Depends On |
 |--------|-------------|------------|
 | Turbine Detail View | True Age vs Calendar Age comparison, terrain badge, stress score, inspection history | True Age API from Pape |
 | Heatmap — Live Data | Connect map to real calculated stress data instead of terrain-class-only | True Age API |
 | Critical Action Report | Top 5% at-risk turbines, downloadable PDF | Pape's API + Jagger's PDF |
+
+**Sprint 2 dependencies from Pape:**
+- `GET /turbines/{id}` — needed for turbine detail page
+- `stress_multiplier` in API response — needed for True Age breakdown display
+- Inspections table — needed if we want inspection history on detail page (can skip for Sprint 2 MVP)
 
 ### Sprint 3 Scope (LATER — Expo Mobile)
 | Screen | Description | Depends On |

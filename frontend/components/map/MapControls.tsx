@@ -23,11 +23,11 @@ export default function MapControls() {
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-1 justify-center">
       <button
         onClick={handleAllClick}
         className={cn(
-          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold transition-colors border",
+          "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono font-semibold transition-colors border",
           isAllActive
             ? "bg-brand-surface2 border-brand-amber text-brand-amber"
             : "bg-brand-surface border-brand-border text-brand-muted hover:border-brand-muted"
@@ -46,7 +46,7 @@ export default function MapControls() {
             key={key}
             onClick={() => handleTerrainClick(key)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-semibold transition-colors border",
+              "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-mono font-semibold transition-colors border",
               isActive && terrainFilter !== null
                 ? "bg-brand-surface2 border-current"
                 : terrainFilter !== null

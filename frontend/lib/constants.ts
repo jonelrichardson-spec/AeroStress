@@ -61,5 +61,11 @@ export const MAP_DEFAULTS = {
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+// ── Critical Action Report ──
+export const CRITICAL_ACTION_PERCENTILE = 0.05;
+
+// ── Unit Conversion ──
+export const KW_TO_MW_DIVISOR = 1000;
+
 // ── Pagination ──
 export const DEFAULT_PAGE_SIZE = 500;
