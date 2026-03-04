@@ -97,7 +97,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Right Panel */}
-      <aside className="w-full lg:w-[30rem] h-full flex flex-col gap-4 px-4 overflow-y-auto min-h-0">
+      <aside className="w-full lg:w-[30rem] h-full flex flex-col gap-4 overflow-y-auto min-h-0">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 gap-3">
           {STAT_CARDS.map((stat) => {
