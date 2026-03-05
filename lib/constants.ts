@@ -58,8 +58,16 @@ export const MAP_DEFAULTS = {
 } as const;
 
 // ── API ──
+const _apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+// Only use backend URL if set and not localhost (production must not call localhost)
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  _apiBaseUrl && !_apiBaseUrl.startsWith("http://localhost")
+    ? _apiBaseUrl
+    : "http://localhost:8000";
+/** When true, frontend uses the FastAPI backend for turbine data (set NEXT_PUBLIC_API_BASE_URL to a public URL). */
+export const USE_BACKEND_API = Boolean(
+  _apiBaseUrl && !_apiBaseUrl.startsWith("http://localhost")
+);
 
 // ── Critical Action Report ──
 export const CRITICAL_ACTION_PERCENTILE = 0.05;
