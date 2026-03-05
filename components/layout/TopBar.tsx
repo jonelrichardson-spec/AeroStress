@@ -8,8 +8,8 @@ import MobileNav from "./MobileNav";
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "DASHBOARD",
   "/dashboard/turbines": "TURBINES",
-  "/inspections": "INSPECTIONS",
-  "/reports": "REPORTS",
+  "/dashboard/inspections": "INSPECTIONS",
+  "/dashboard/reports": "REPORTS",
 };
 
 function getPageTitle(pathname: string): string {
