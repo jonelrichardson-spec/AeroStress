@@ -15,7 +15,7 @@ allow_origins=[
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://aerostress.onrender.com",
-    "aerostress-d9v6w5d04-papes-projects-f59f593c.vercel.app",
+    "https://aerostress-kdp7joht7-papes-projects-f59f593c.vercel.app",
 ],    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
