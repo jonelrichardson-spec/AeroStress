@@ -33,6 +33,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       const turbines = await getTurbines();
       set({ turbines, isLoading: false });
     } catch (err) {
+      console.error("[useFarmStore] fetchTurbines failed:", err);
       const message =
         err instanceof ApiError
           ? err.message
