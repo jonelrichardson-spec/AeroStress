@@ -39,7 +39,16 @@ async function fetchApi<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+  const url = `${API_BASE_URL}${endpoint}`;
+  // Never call localhost from a deployed origin (browser blocks loopback; use Supabase or deployed API)
+  if (
+    typeof window !== "undefined" &&
+    !window.location.origin.includes("localhost") &&
+    (url.startsWith("http://localhost") || url.startsWith("http://127.0.0.1"))
+  ) {
+    throw new ApiError(SUPABASE_CONFIG_MSG, 500);
+  }
+  const response = await fetch(url, options);
 
   if (!response.ok) {
     throw new ApiError(
