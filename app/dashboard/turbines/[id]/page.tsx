@@ -899,15 +899,17 @@ export default function TurbineDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <a
-                        href={getInspectionReportUrl(inspection.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 font-mono text-xs text-brand-amber hover:underline"
-                      >
-                        View Report
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                      {getInspectionReportUrl(inspection.id) ? (
+                        <a
+                          href={getInspectionReportUrl(inspection.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 font-mono text-xs text-brand-amber hover:underline"
+                        >
+                          View Report
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : null}
                     </div>
                   </div>
                 );

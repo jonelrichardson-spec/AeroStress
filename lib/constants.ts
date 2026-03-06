@@ -58,13 +58,14 @@ export const MAP_DEFAULTS = {
 } as const;
 
 // ── API ──
+// Supabase-only: do not set NEXT_PUBLIC_API_BASE_URL. All features (turbines, inspections, stress, predictions) use Supabase.
 const _apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 // Only use backend URL if set and not localhost (production must not call localhost)
 export const API_BASE_URL =
   _apiBaseUrl && !_apiBaseUrl.startsWith("http://localhost")
     ? _apiBaseUrl
     : "http://localhost:8000";
-/** When true, frontend uses the FastAPI backend for turbine data (set NEXT_PUBLIC_API_BASE_URL to a public URL). */
+/** When true, frontend uses the FastAPI backend. When false, app runs in Supabase-only mode. */
 export const USE_BACKEND_API = Boolean(
   _apiBaseUrl && !_apiBaseUrl.startsWith("http://localhost")
 );

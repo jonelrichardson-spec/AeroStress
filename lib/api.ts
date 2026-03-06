@@ -300,10 +300,48 @@ export async function getFailurePredictions(
   }
 }
 
+function rowToInspection(row: Record<string, unknown>): Inspection {
+  return {
+    id: row.id as string,
+    turbine_id: row.turbine_id as string,
+    conducted_at: (row.conducted_at as string) ?? null,
+    inspector_name: (row.inspector_name as string) ?? null,
+    status: mapInspectionStatus(row.status as string),
+    component_inspected: (row.component_inspected as string) ?? null,
+    condition_found: (row.condition_found as string) ?? null,
+    severity_rating: (row.severity_rating as number) ?? null,
+    notes: (row.notes as string) ?? null,
+    submitted_at: (row.submitted_at as string) ?? null,
+    prediction_match: (row.prediction_match as boolean) ?? null,
+    attachment_url: (row.attachment_url as string) ?? null,
+    created_at: (row.created_at as string) ?? "",
+    updated_at: (row.updated_at as string) ?? "",
+  };
+}
+
+function mapInspectionStatus(dbStatus: string): "draft" | "pending" | "completed" | "cancelled" {
+  if (dbStatus === "submitted") return "completed";
+  if (dbStatus === "draft" || dbStatus === "pending" || dbStatus === "completed" || dbStatus === "cancelled") return dbStatus;
+  return "draft";
+}
+
+async function getTurbineInspectionsFromSupabase(turbineId: string): Promise<Inspection[]> {
+  if (!supabase) throw new ApiError(SUPABASE_CONFIG_MSG, 500);
+  const { data, error } = await supabase
+    .from("inspections")
+    .select("*")
+    .eq("turbine_id", turbineId)
+    .order("conducted_at", { ascending: false });
+  if (error) throw new ApiError(error.message, 500);
+  return (data ?? []).map((row) => rowToInspection(row as Record<string, unknown>));
+}
+
 export async function getTurbineInspections(
   turbineId: string
 ): Promise<Inspection[]> {
-  // Inspections come from the backend API only; when using Supabase only, return empty
+  if (!USE_BACKEND_API && supabase) {
+    return getTurbineInspectionsFromSupabase(turbineId);
+  }
   if (isProductionBrowser() && !USE_BACKEND_API) {
     return [];
   }
@@ -319,6 +357,38 @@ export async function getTurbineInspections(
 
 // ── Inspection Endpoints ──
 
+async function createInspectionViaSupabase(
+  turbineId: string,
+  data: {
+    conducted_at?: string;
+    inspector_name?: string;
+    component_inspected?: string;
+    condition_found?: string;
+    severity_rating?: number;
+    notes?: string;
+  }
+): Promise<Inspection> {
+  if (!supabase) throw new ApiError(SUPABASE_CONFIG_MSG, 500);
+  const row: Record<string, unknown> = {
+    turbine_id: turbineId,
+    status: "submitted",
+    submitted_at: new Date().toISOString(),
+    inspector_name: data.inspector_name ?? null,
+    component_inspected: data.component_inspected ?? null,
+    condition_found: data.condition_found ?? null,
+    severity_rating: data.severity_rating ?? null,
+    notes: data.notes ?? null,
+  };
+  if (data.conducted_at) row.conducted_at = data.conducted_at;
+  const { data: inserted, error } = await supabase
+    .from("inspections")
+    .insert(row)
+    .select()
+    .single();
+  if (error) throw new ApiError(error.message, 500);
+  return rowToInspection((inserted ?? {}) as Record<string, unknown>);
+}
+
 export async function createInspection(
   turbineId: string,
   data: {
@@ -330,6 +400,12 @@ export async function createInspection(
     notes?: string;
   }
 ): Promise<Inspection> {
+  if (!USE_BACKEND_API && supabase) {
+    return createInspectionViaSupabase(turbineId, data);
+  }
+  if (isProductionBrowser() && !USE_BACKEND_API) {
+    throw new ApiError(SUPABASE_CONFIG_MSG, 500);
+  }
   return fetchApi<Inspection>(`/turbines/${turbineId}/inspections`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -373,9 +449,29 @@ export async function uploadInspectionAttachment(
   inspectionId: string,
   file: File
 ): Promise<Inspection> {
+  if (!USE_BACKEND_API && supabase) {
+    // Supabase-only: upload to Storage bucket "inspection-attachments" and update inspection
+    const bucket = "inspection-attachments";
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `${inspectionId}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, { upsert: false });
+    if (uploadError) throw new ApiError(uploadError.message, 500);
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+    const attachment_url = urlData?.publicUrl ?? "";
+    const { data: updated, error: updateError } = await supabase
+      .from("inspections")
+      .update({ attachment_url, updated_at: new Date().toISOString() })
+      .eq("id", inspectionId)
+      .select()
+      .single();
+    if (updateError) throw new ApiError(updateError.message, 500);
+    return rowToInspection((updated ?? {}) as Record<string, unknown>);
+  }
+  if (isProductionBrowser() && !USE_BACKEND_API) {
+    throw new ApiError("Photo upload requires a deployed backend or Supabase Storage.", 500);
+  }
   const formData = new FormData();
   formData.append("file", file);
-
   return fetchApi<Inspection>(`/inspections/${inspectionId}/attachment`, {
     method: "POST",
     body: formData,
@@ -383,6 +479,8 @@ export async function uploadInspectionAttachment(
 }
 
 export function getInspectionReportUrl(inspectionId: string): string {
+  // PDF report is generated by the FastAPI backend; when using Supabase only, no report URL
+  if (!USE_BACKEND_API) return "";
   return `${API_BASE_URL}/inspections/${inspectionId}/report`;
 }
 
