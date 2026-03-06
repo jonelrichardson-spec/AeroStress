@@ -303,6 +303,10 @@ export async function getFailurePredictions(
 export async function getTurbineInspections(
   turbineId: string
 ): Promise<Inspection[]> {
+  // Inspections come from the backend API only; when using Supabase only, return empty
+  if (isProductionBrowser() && !USE_BACKEND_API) {
+    return [];
+  }
   try {
     return await fetchApi<Inspection[]>(`/turbines/${turbineId}/inspections`);
   } catch (error) {
