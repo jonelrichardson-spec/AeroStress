@@ -2,11 +2,12 @@
 
 import { useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { MapPin, Wind, Siren, Hourglass, Loader2 } from "lucide-react";
+import { MapPin, Wind, Siren, Hourglass, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TERRAIN_CONFIG, STRESS_THRESHOLDS } from "@/lib/constants";
 import { useFarmStore } from "@/stores/useFarmStore";
+import { supabase } from "@/lib/supabase";
 import MapControls from "@/components/map/MapControls";
 import TurbineListPanel from "@/components/turbine/TurbineListPanel";
 import type { Turbine, TerrainClass } from "@/lib/types";
@@ -94,6 +95,21 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] pt-2 px-4 pb-4 gap-4 overflow-hidden">
+      {/* Env debug: only show when Supabase not configured so user can confirm build got vars */}
+      {!supabase && typeof window !== "undefined" && !window.location.origin.includes("localhost") ? (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-md bg-brand-surface2 border border-terrain-complex/50 text-terrain-complex">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="text-xs font-mono">
+            Supabase not configured in this build. In Vercel: set both env vars for <strong>Production</strong>, then Redeploy → <strong>Clear cache and redeploy</strong>.
+          </span>
+        </div>
+      ) : null}
+      {supabase && typeof window !== "undefined" && !window.location.origin.includes("localhost") ? (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-md bg-brand-surface2 border border-terrain-flat/50 text-terrain-flat">
+          <CheckCircle className="h-4 w-4 shrink-0" />
+          <span className="text-xs font-mono">Supabase connected</span>
+        </div>
+      ) : null}
       {/* Map Area */}
       <div className="flex-1 relative bg-brand-surface rounded-lg overflow-hidden">
         <StressHeatmap />
