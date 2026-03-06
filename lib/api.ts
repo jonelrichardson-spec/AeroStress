@@ -23,6 +23,9 @@ function isProductionBrowser(): boolean {
 const SUPABASE_CONFIG_MSG =
   "Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel → Settings → Environment Variables, then redeploy.";
 
+const BACKEND_CONFIG_MSG =
+  "Stress Analysis and Failure Predictions require a deployed backend. Set NEXT_PUBLIC_API_BASE_URL in Vercel to your backend URL (e.g. on Render), then redeploy.";
+
 // ── API Error ──
 
 export class ApiError extends Error {
@@ -264,6 +267,9 @@ export async function getTurbineById(
 export async function getStressExplanation(
   turbineId: string
 ): Promise<StressExplanation | null> {
+  if (isProductionBrowser() && !USE_BACKEND_API) {
+    throw new ApiError(BACKEND_CONFIG_MSG, 500);
+  }
   try {
     return await fetchApi<StressExplanation>(
       `/turbines/${turbineId}/stress-explanation`
@@ -279,6 +285,9 @@ export async function getStressExplanation(
 export async function getFailurePredictions(
   turbineId: string
 ): Promise<FailurePredictionsResponse | null> {
+  if (isProductionBrowser() && !USE_BACKEND_API) {
+    throw new ApiError(BACKEND_CONFIG_MSG, 500);
+  }
   try {
     return await fetchApi<FailurePredictionsResponse>(
       `/turbines/${turbineId}/failure-predictions`
