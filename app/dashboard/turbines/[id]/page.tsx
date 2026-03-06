@@ -20,7 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useFarmStore } from "@/stores/useFarmStore";
 import { getTurbineById, getStressExplanation, getFailurePredictions, getTurbineInspections, getInspectionReportUrl, createInspection, uploadInspectionAttachment } from "@/lib/api";
-import { TERRAIN_CONFIG, KW_TO_MW_DIVISOR } from "@/lib/constants";
+import { TERRAIN_CONFIG, KW_TO_MW_DIVISOR, USE_BACKEND_API } from "@/lib/constants";
+import { getStressExplanationFromTurbine, getFailurePredictionsFromTurbine } from "@/lib/stressFromTurbine";
 import type { Turbine, TerrainClass, StressExplanation, FailurePredictionsResponse, Inspection } from "@/lib/types";
 
 export default function TurbineDetailPage() {
@@ -111,11 +112,23 @@ export default function TurbineDetailPage() {
     loadTurbine();
   }, [turbineId, turbines, fetchTurbines]);
 
-  // Fetch stress explanation when turbine is loaded
+  // Stress explanation: from API when backend is used, else from turbine data (Supabase-only)
   useEffect(() => {
-    const loadStressExplanation = async () => {
-      if (!turbine?.id) return;
+    if (!turbine?.id) return;
 
+    if (!USE_BACKEND_API && turbine) {
+      const explanation = getStressExplanationFromTurbine(
+        turbine.true_age_years,
+        turbine.calendar_age_years,
+        turbine.terrain_class
+      );
+      setStressExplanation({ explanation });
+      setStressError(null);
+      setStressLoading(false);
+      return;
+    }
+
+    const loadStressExplanation = async () => {
       try {
         setStressLoading(true);
         setStressError(null);
@@ -133,13 +146,25 @@ export default function TurbineDetailPage() {
     };
 
     loadStressExplanation();
-  }, [turbine?.id]);
+  }, [turbine?.id, turbine?.true_age_years, turbine?.calendar_age_years, turbine?.terrain_class]);
 
-  // Fetch failure predictions when turbine is loaded
+  // Failure predictions: from API when backend is used, else from turbine data (Supabase-only)
   useEffect(() => {
-    const loadFailurePredictions = async () => {
-      if (!turbine?.id) return;
+    if (!turbine?.id) return;
 
+    if (!USE_BACKEND_API && turbine) {
+      const predictions = getFailurePredictionsFromTurbine(
+        turbine.terrain_class,
+        turbine.true_age_years,
+        turbine.calendar_age_years
+      );
+      setFailurePredictions({ predictions });
+      setPredictionsError(null);
+      setPredictionsLoading(false);
+      return;
+    }
+
+    const loadFailurePredictions = async () => {
       try {
         setPredictionsLoading(true);
         setPredictionsError(null);
@@ -157,7 +182,7 @@ export default function TurbineDetailPage() {
     };
 
     loadFailurePredictions();
-  }, [turbine?.id]);
+  }, [turbine?.id, turbine?.true_age_years, turbine?.calendar_age_years, turbine?.terrain_class]);
 
   // Fetch inspections when turbine is loaded
   useEffect(() => {
