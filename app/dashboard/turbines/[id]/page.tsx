@@ -229,8 +229,10 @@ export default function TurbineDetailPage() {
 
       const newInspection = await createInspection(turbine.id, inspectionFormData);
 
-      // Refresh inspections list
-      const data = await getTurbineInspections(turbine.id);
+      // Refresh list from Supabase/API; if refetch is empty, prepend the new one so it always shows
+      let data = await getTurbineInspections(turbine.id);
+      const hasNew = data.some((i) => i.id === newInspection.id);
+      if (!hasNew) data = [newInspection, ...data];
       const sorted = data.sort((a, b) => {
         const dateA = new Date(a.conducted_at || a.created_at).getTime();
         const dateB = new Date(b.conducted_at || b.created_at).getTime();
@@ -241,8 +243,11 @@ export default function TurbineDetailPage() {
       // Keep form open for photo upload
       setSubmittedInspectionId(newInspection.id);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to submit inspection";
       setSubmitError(
-        err instanceof Error ? err.message : "Failed to submit inspection"
+        msg.includes("relation") || msg.includes("does not exist")
+          ? `${msg} Run backend/migrations/003_inspections.sql in Supabase SQL Editor to create the inspections table.`
+          : msg
       );
     } finally {
       setSubmittingInspection(false);

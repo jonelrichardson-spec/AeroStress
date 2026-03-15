@@ -97,10 +97,10 @@ export default function DashboardPage() {
     <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] pt-2 px-4 pb-4 gap-4 overflow-hidden">
       {/* Env debug: only show when Supabase not configured so user can confirm build got vars */}
       {!supabase && typeof window !== "undefined" && !window.location.origin.includes("localhost") ? (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-md bg-brand-surface2 border border-terrain-complex/50 text-terrain-complex">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-3 py-1.5 rounded-md bg-brand-surface2 border border-brand-amber/50 text-brand-amber">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span className="text-xs font-mono">
-            Supabase not configured in this build. In Vercel: set both env vars for <strong>Production</strong>, then Redeploy → <strong>Clear cache and redeploy</strong>.
+            Using <strong>mock data</strong> (500 turbines). Set Supabase env vars for live data.
           </span>
         </div>
       ) : null}

@@ -1,4 +1,5 @@
 import { API_BASE_URL, DEFAULT_PAGE_SIZE, USE_BACKEND_API } from "./constants";
+import { getMockTurbineById, getMockTurbinesPaginated } from "./mockTurbines";
 import { supabase } from "./supabase";
 import type {
   Turbine,
@@ -222,12 +223,8 @@ export async function getTurbines(
   if (supabase) {
     return getTurbinesFromSupabase(limit, offset);
   }
-  if (isProductionBrowser()) {
-    throw new ApiError(SUPABASE_CONFIG_MSG, 500);
-  }
-  return fetchApi<Turbine[]>(
-    `/turbines?limit=${limit}&offset=${offset}`
-  );
+  // Supabase paused or not configured: use 500 mock turbines
+  return Promise.resolve(getMockTurbinesPaginated(limit, offset));
 }
 
 export async function getFleetTurbines(
@@ -237,12 +234,8 @@ export async function getFleetTurbines(
   if (!USE_BACKEND_API && supabase) {
     return getFleetTurbinesFromSupabase(fleetId, sort);
   }
-  if (isProductionBrowser()) {
-    throw new ApiError(SUPABASE_CONFIG_MSG, 500);
-  }
-  return fetchApi<Turbine[]>(
-    `/fleets/${fleetId}/turbines?sort=${sort}`
-  );
+  // Mock mode: no fleet association
+  return Promise.resolve([]);
 }
 
 export async function getTurbineById(
@@ -251,8 +244,8 @@ export async function getTurbineById(
   if (!USE_BACKEND_API && supabase) {
     return getTurbineByIdFromSupabase(turbineId);
   }
-  if (isProductionBrowser()) {
-    throw new ApiError(SUPABASE_CONFIG_MSG, 500);
+  if (!USE_BACKEND_API) {
+    return Promise.resolve(getMockTurbineById(turbineId) ?? null);
   }
   try {
     return await fetchApi<Turbine>(`/turbines/${turbineId}`);
