@@ -34,3 +34,8 @@ logs/
 # Database
 *.db
 *.sqlite3
+
+# Internal dev files
+claude.md
+rules.md
+prd.md

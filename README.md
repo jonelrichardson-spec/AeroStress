@@ -6,8 +6,6 @@
 
 ![AeroStress Dashboard](https://img.shields.io/badge/status-in%20development-blue) ![Next.js 16](https://img.shields.io/badge/Next.js-16-black) ![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688)
 
-**Live:** [aerostress.vercel.app](https://aerostress.vercel.app/dashboard)
-
 ---
 
 ## The Problem
@@ -39,7 +37,6 @@ AeroStress gives wind farm asset managers a single dashboard to see which turbin
 | Maps | Mapbox GL JS | WebGL rendering handles 500+ markers smoothly; SDF image support for custom triangle markers with terrain-colored tinting |
 | Backend | FastAPI, Python | Async endpoints for turbine queries; easy integration with PostGIS spatial functions |
 | Database | Supabase / PostGIS | Row-level security, real-time subscriptions (planned), and geospatial queries on turbine coordinates |
-| Mobile | React Native / Expo | Shared TypeScript types with web dashboard; offline-capable inspection form for field technicians |
 | Deployment | Vercel | Zero-config Next.js deploys with preview URLs per branch |
 
 ## Architecture
@@ -115,12 +112,13 @@ npm run dev
 - **USGS elevation integration** — replace the current latitude-based terrain heuristic with real DEM (Digital Elevation Model) data for accurate terrain classification
 - **Offline inspection sync** — use Supabase realtime subscriptions + AsyncStorage in the Expo app so technicians can submit inspections from remote sites without connectivity
 - **Fleet cost projections** — surface the `/fleets/{id}/projected-savings` endpoint as an interactive chart showing how predictive maintenance reallocates O&M budgets toward high-risk turbines
+- **Expo mobile app** — React Native / Expo app for field technicians to submit inspections on-site with shared TypeScript types from the web dashboard
 
 ## About This Project
 
 Built during Pursuit's AI-Native Builder Fellowship (Spring 2026) as a 3-person team. I was the **frontend lead**: built the Mapbox stress heatmap with SDF triangle markers, turbine detail pages with True Age breakdowns, inspection CRUD with photo upload, and the PDF report download flow. Pape owned the FastAPI backend and Supabase data layer; Jagger built the Puppeteer PDF generation service.
 
-**My role:** Frontend lead — Next.js dashboard, Mapbox GL integration, inspection workflow, and Expo mobile app.
+**My role:** Frontend lead — Next.js dashboard, Mapbox GL integration, and inspection workflow.
 
 ---
 
