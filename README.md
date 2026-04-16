@@ -1,5 +1,7 @@
 # AeroStress
 
+![AeroStress Dashboard](docs/dashboard.png)
+
 > Predictive maintenance platform that calculates the "True Age" of wind turbines based on terrain-specific stress, helping asset managers prioritize inspections before failures happen.
 
 ![AeroStress Dashboard](https://img.shields.io/badge/status-in%20development-blue) ![Next.js 16](https://img.shields.io/badge/Next.js-16-black) ![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688)
