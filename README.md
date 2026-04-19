@@ -122,4 +122,4 @@ Built during Pursuit's AI-Native Builder Fellowship (Spring 2026) as a 3-person 
 
 ---
 
-Built by [Jonel Richardson](https://linkedin.com/in/jonel-richardson-09a399382)
+Built by [Jonel Richardson](https://linkedin.com/in/jonel-richardson)
