@@ -86,7 +86,7 @@ AeroStress gives wind farm asset managers a single dashboard to see which turbin
 
 ### Installation
 ```bash
-git clone https://github.com/jonelrichardson-spec/AeroStress.git
+git clone https://github.com/jonelrichardson/AeroStress.git
 cd AeroStress
 npm install
 ```
